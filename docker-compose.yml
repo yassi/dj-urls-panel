@@ -17,12 +17,3 @@ services:
     depends_on:
       - redis
     command: "/bin/bash"
-
-  postgres:
-    image: postgres:16
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=postgres
