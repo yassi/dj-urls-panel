@@ -2,7 +2,162 @@
 {% load i18n admin_urls static admin_list %}
 
 {% block content %}
-<div class="module">
-    <h2>Dj Urls Panel</h2>
+<div id="content-main">
+    <!-- Statistics Section -->
+    <div class="instance-stats">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">{% trans "Total URLs" %}</div>
+                <div class="stat-value">{{ stats.total_urls }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">{% trans "Named URLs" %}</div>
+                <div class="stat-value stat-success">{{ stats.named_urls }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">{% trans "Namespaces" %}</div>
+                <div class="stat-value">{{ stats.namespaces }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Form -->
+    <div class="search-form">
+        <form method="get" action="">
+            <div class="search-form-row">
+                <div class="search-form-fields">
+                    <div class="search-field-group">
+                        <label for="searchbar">{% trans "Search URLs" %}</label>
+                        <input 
+                            type="text" 
+                            id="searchbar" 
+                            name="q" 
+                            value="{{ search_query }}"
+                            placeholder="{% trans 'Search by pattern, name, or view...' %}"
+                            style="width: 300px;"
+                        >
+                    </div>
+                    <div class="search-field-group">
+                        <label for="namespace_filter">{% trans "Namespace" %}</label>
+                        <select name="namespace" id="namespace_filter">
+                            <option value="">{% trans "All" %}</option>
+                            {% if has_root_urls %}
+                            <option value="_root" {% if namespace_filter == "_root" %}selected{% endif %}>
+                                {% trans "Root (no namespace)" %}
+                            </option>
+                            {% endif %}
+                            {% for ns in available_namespaces %}
+                            <option value="{{ ns }}" {% if namespace_filter == ns %}selected{% endif %}>
+                                {{ ns }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="search-field-group">
+                        <label>&nbsp;</label>
+                        <input type="submit" value="{% trans 'Search' %}">
+                    </div>
+                </div>
+                <div class="search-help">
+                    <p class="help">
+                        {% trans "Search across URL patterns, names, and view functions. Filter by namespace to narrow results." %}
+                    </p>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Active Filters Display -->
+        {% if namespace_filter %}
+        <div class="active-filters">
+            <strong>{% trans "Active Filter:" %}</strong>
+            {% if namespace_filter == "_root" %}
+                <span class="filter-badge filter-badge-active">
+                    {% trans "Root URLs" %}
+                    <a href="?{% if search_query %}q={{ search_query }}{% endif %}" class="filter-remove" title="{% trans 'Remove filter' %}">×</a>
+                </span>
+            {% else %}
+                <span class="filter-badge filter-badge-active">
+                    {{ namespace_filter }}
+                    <a href="?{% if search_query %}q={{ search_query }}{% endif %}" class="filter-remove" title="{% trans 'Remove filter' %}">×</a>
+                </span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- URLs Table -->
+    <div class="module">
+        {% if search_query or namespace_filter %}
+        <div class="results-info">
+            {% blocktrans count counter=total_displayed %}
+                Showing {{ counter }} URL
+            {% plural %}
+                Showing {{ counter }} URLs
+            {% endblocktrans %}
+        </div>
+        {% endif %}
+        
+        {% if urls %}
+        <table id="result_list">
+            <thead>
+                <tr>
+                    <th scope="col">
+                        <div class="text">{% trans "Pattern" %}</div>
+                    </th>
+                    <th scope="col">
+                        <div class="text">{% trans "Name" %}</div>
+                    </th>
+                    <th scope="col">
+                        <div class="text">{% trans "View" %}</div>
+                    </th>
+                    <th scope="col">
+                        <div class="text">{% trans "Namespace" %}</div>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for url in urls %}
+                <tr class="{% cycle 'row1' 'row2' %}">
+                    <td>
+                        <code>{{ url.pattern }}</code>
+                    </td>
+                    <td>
+                        {% if url.name %}
+                            <span class="key-type-badge key-type-string">{{ url.name }}</span>
+                        {% else %}
+                            <span style="color: #999; font-style: italic;">{% trans "unnamed" %}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <code style="font-size: 11px;">{{ url.view }}</code>
+                        {% if url.view_class %}
+                            <br><small style="color: #666;">Class: {{ url.view_class }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if url.namespace %}
+                            <a href="?namespace={{ url.namespace }}" class="namespace-link">
+                                <span class="key-type-badge key-type-hash">{{ url.namespace }}</span>
+                            </a>
+                        {% else %}
+                            <a href="?namespace=_root" class="namespace-link">
+                                <span style="color: #999; font-style: italic;">{% trans "root" %}</span>
+                            </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="paginator">
+            {% if search_query %}
+                {% trans "No URLs match your search criteria." %}
+            {% else %}
+                {% trans "No URLs found." %}
+            {% endif %}
+        </p>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

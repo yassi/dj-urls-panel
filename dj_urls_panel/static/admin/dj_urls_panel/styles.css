@@ -1,3 +1,176 @@
+/* ===== URL LIST STYLES ===== */
+
+/* Results info text */
+.results-info {
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    background-color: var(--darkened-bg, rgba(121, 174, 200, 0.1));
+    border-left: 3px solid var(--link-fg, #417690);
+    border-radius: 3px;
+    font-weight: bold;
+    color: var(--body-fg, #333);
+}
+
+@media (prefers-color-scheme: dark) {
+    .results-info {
+        background-color: var(--darkened-bg, rgba(121, 174, 200, 0.15));
+        border-left-color: var(--link-fg, #79aec8);
+        color: var(--body-fg, #ddd);
+    }
+}
+
+/* Namespace link styles */
+.namespace-link {
+    text-decoration: none;
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+
+.namespace-link:hover {
+    transform: scale(1.05);
+}
+
+.namespace-link .key-type-badge {
+    cursor: pointer;
+}
+
+.namespace-link:hover .key-type-badge {
+    opacity: 0.9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Active filter badge styles */
+.active-filters {
+    margin-top: 15px;
+    padding: 10px 15px;
+    background-color: var(--darkened-bg, rgba(121, 174, 200, 0.1));
+    border-left: 3px solid var(--link-fg, #417690);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.filter-badge-active {
+    background-color: var(--link-fg, #417690);
+    color: white;
+}
+
+.filter-remove {
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+    line-height: 1;
+    font-weight: bold;
+    padding: 0 4px;
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+}
+
+.filter-remove:hover {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Dark mode support for active filters */
+@media (prefers-color-scheme: dark) {
+    .active-filters {
+        background-color: var(--darkened-bg, rgba(121, 174, 200, 0.15));
+        border-left-color: var(--link-fg, #79aec8);
+    }
+
+    .filter-badge-active {
+        background-color: var(--link-fg, #79aec8);
+    }
+}
+
+#result_list {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#result_list thead th {
+    background-color: var(--darkened-bg, #f8f8f8);
+    border-bottom: 2px solid var(--border-color, #ddd);
+    padding: 10px;
+    text-align: left;
+    font-weight: bold;
+}
+
+#result_list tbody td {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color, #eee);
+    vertical-align: top;
+}
+
+#result_list tbody tr:hover {
+    background-color: var(--darkened-bg, rgba(0, 0, 0, 0.02));
+}
+
+#result_list tbody tr.row1 {
+    background-color: var(--body-bg, #fff);
+}
+
+#result_list tbody tr.row2 {
+    background-color: var(--darkened-bg, rgba(0, 0, 0, 0.02));
+}
+
+#result_list code {
+    background-color: var(--darkened-bg, rgba(0, 0, 0, 0.05));
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    font-size: 12px;
+    color: var(--body-fg, #333);
+    word-break: break-all;
+}
+
+.stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--body-fg, #666);
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+/* Dark mode support for URL list */
+@media (prefers-color-scheme: dark) {
+    #result_list thead th {
+        background-color: var(--darkened-bg, rgba(255, 255, 255, 0.05));
+        border-bottom-color: var(--border-color, #555);
+    }
+
+    #result_list tbody td {
+        border-bottom-color: var(--border-color, #444);
+    }
+
+    #result_list tbody tr:hover {
+        background-color: var(--darkened-bg, rgba(255, 255, 255, 0.05));
+    }
+
+    #result_list tbody tr.row2 {
+        background-color: var(--darkened-bg, rgba(255, 255, 255, 0.02));
+    }
+
+    #result_list code {
+        background-color: var(--darkened-bg, rgba(255, 255, 255, 0.1));
+        color: var(--body-fg, #ddd);
+    }
+
+    .stat-label {
+        color: var(--body-fg, #aaa);
+    }
+}
+
 /* ===== KEY SEARCH PAGE STYLES ===== */
 
 .key-search-page-header {
@@ -103,7 +276,7 @@
     border-color: var(--message-error-border, #f5c6cb);
 }
 
-.messagelist .warning  {
+.messagelist .warning {
     background-color: var(--message-warning-bg, #fff3cd);
     color: var(--message-warning-fg, #856404);
     border-color: var(--message-warning-border, #ffeeba);
