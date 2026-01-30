@@ -19,6 +19,22 @@
     }
 }
 
+/* Pattern link styles */
+.pattern-link {
+    text-decoration: none;
+    color: inherit;
+    display: inline-block;
+    transition: all 0.2s ease;
+}
+
+.pattern-link:hover {
+    color: var(--link-fg, #417690);
+}
+
+.pattern-link:hover code {
+    background-color: var(--link-fg, rgba(121, 174, 200, 0.2));
+}
+
 /* Namespace link styles */
 .namespace-link {
     text-decoration: none;
@@ -37,6 +53,17 @@
 .namespace-link:hover .key-type-badge {
     opacity: 0.9;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Dark mode support for pattern links */
+@media (prefers-color-scheme: dark) {
+    .pattern-link:hover {
+        color: var(--link-fg, #79aec8);
+    }
+
+    .pattern-link:hover code {
+        background-color: var(--link-fg, rgba(121, 174, 200, 0.3));
+    }
 }
 
 /* Active filter badge styles */
@@ -168,6 +195,132 @@
 
     .stat-label {
         color: var(--body-fg, #aaa);
+    }
+}
+
+/* ===== URL DETAIL PAGE STYLES ===== */
+
+.url-detail-content {
+    padding: 20px;
+}
+
+.detail-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.detail-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 20px;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--border-color, #eee);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-weight: bold;
+    color: var(--body-fg, #666);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-value {
+    display: flex;
+    align-items: center;
+    word-break: break-all;
+}
+
+.detail-code {
+    background-color: var(--darkened-bg, rgba(0, 0, 0, 0.05));
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    font-size: 13px;
+    color: var(--body-fg, #333);
+    display: inline-block;
+    max-width: 100%;
+    word-break: break-all;
+}
+
+.example-block {
+    margin-bottom: 25px;
+}
+
+.example-block:last-child {
+    margin-bottom: 0;
+}
+
+.example-block h3 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--body-fg, #333);
+}
+
+.code-example {
+    background-color: var(--darkened-bg, rgba(0, 0, 0, 0.05));
+    padding: 15px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    font-size: 13px;
+    color: var(--body-fg, #333);
+    overflow-x: auto;
+    border: 1px solid var(--border-color, #ddd);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.info-block {
+    padding: 15px;
+    background-color: var(--darkened-bg, rgba(121, 174, 200, 0.1));
+    border-left: 3px solid var(--link-fg, #417690);
+    border-radius: 3px;
+}
+
+.info-block p {
+    margin: 0;
+    line-height: 1.6;
+    color: var(--body-fg, #333);
+}
+
+/* Dark mode support for detail page */
+@media (prefers-color-scheme: dark) {
+    .detail-row {
+        border-bottom-color: var(--border-color, #444);
+    }
+
+    .detail-label {
+        color: var(--body-fg, #aaa);
+    }
+
+    .detail-code {
+        background-color: var(--darkened-bg, rgba(255, 255, 255, 0.1));
+        color: var(--body-fg, #ddd);
+    }
+
+    .example-block h3 {
+        color: var(--body-fg, #ddd);
+    }
+
+    .code-example {
+        background-color: var(--darkened-bg, rgba(255, 255, 255, 0.05));
+        color: var(--body-fg, #ddd);
+        border-color: var(--border-color, #555);
+    }
+
+    .info-block {
+        background-color: var(--darkened-bg, rgba(121, 174, 200, 0.15));
+        border-left-color: var(--link-fg, #79aec8);
+    }
+
+    .info-block p {
+        color: var(--body-fg, #ddd);
     }
 }
 

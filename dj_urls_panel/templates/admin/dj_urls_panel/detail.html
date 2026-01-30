@@ -1,0 +1,141 @@
+{% extends "admin/dj_urls_panel/base.html" %}
+{% load i18n admin_urls static %}
+
+{% block content %}
+<div id="content-main">
+    <!-- Back to List Link -->
+    <div style="margin-bottom: 20px;">
+        <a href="{% url 'dj_urls_panel:index' %}" style="color: var(--link-fg, #417690); text-decoration: none;">
+            ← {% trans "Back to URL List" %}
+        </a>
+    </div>
+
+    <!-- URL Detail Card -->
+    <div class="module">
+        <h2>{% trans "URL Pattern" %}</h2>
+        <div class="url-detail-content">
+            <div class="detail-section">
+                <div class="detail-row">
+                    <div class="detail-label">{% trans "Pattern" %}</div>
+                    <div class="detail-value">
+                        <code class="detail-code">{{ url.pattern }}</code>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">{% trans "Name" %}</div>
+                    <div class="detail-value">
+                        {% if url.name %}
+                            <span class="key-type-badge key-type-string">{{ url.name }}</span>
+                        {% else %}
+                            <span style="color: #999; font-style: italic;">{% trans "unnamed" %}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">{% trans "View Function" %}</div>
+                    <div class="detail-value">
+                        <code class="detail-code">{{ url.view }}</code>
+                    </div>
+                </div>
+
+                {% if url.view_class %}
+                <div class="detail-row">
+                    <div class="detail-label">{% trans "View Class" %}</div>
+                    <div class="detail-value">
+                        <code class="detail-code">{{ url.view_class }}</code>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="detail-row">
+                    <div class="detail-label">{% trans "Namespace" %}</div>
+                    <div class="detail-value">
+                        {% if url.namespace %}
+                            <a href="{% url 'dj_urls_panel:index' %}?namespace={{ url.namespace }}" class="namespace-link">
+                                <span class="key-type-badge key-type-hash">{{ url.namespace }}</span>
+                            </a>
+                        {% else %}
+                            <span style="color: #999;">{% trans "None" %}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if url.app_name %}
+                <div class="detail-row">
+                    <div class="detail-label">{% trans "App Name" %}</div>
+                    <div class="detail-value">
+                        <span class="key-type-badge key-type-list">{{ url.app_name }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- URL Reversal Example -->
+    {% if url.name %}
+    <div class="module" style="margin-top: 20px;">
+        <h2>{% trans "Usage Examples" %}</h2>
+        <div class="url-detail-content">
+            <div class="detail-section">
+                <div class="example-block">
+                    <h3>{% trans "Template Usage" %}</h3>
+                    <pre class="code-example">{% templatetag openblock %} url '{{ url.name }}' {% templatetag closeblock %}</pre>
+                </div>
+
+                <div class="example-block">
+                    <h3>{% trans "Python Usage" %}</h3>
+                    <pre class="code-example">from django.urls import reverse
+
+url = reverse('{{ url.name }}')</pre>
+                </div>
+
+                {% if url.namespace %}
+                <div class="example-block">
+                    <h3>{% trans "Namespace Information" %}</h3>
+                    <pre class="code-example"># Short name (within same namespace)
+{{ short_name }}
+
+# Full namespaced name (from anywhere)
+{{ url.name }}
+
+# Template usage
+{% templatetag openblock %} url '{{ url.name }}' {% templatetag closeblock %}
+
+# Python usage
+url = reverse('{{ url.name }}')</pre>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Pattern Information -->
+    <div class="module" style="margin-top: 20px;">
+        <h2>{% trans "Pattern Information" %}</h2>
+        <div class="url-detail-content">
+            <div class="detail-section">
+                <div class="info-block">
+                    <p>
+                        {% if url.name %}
+                            {% trans "This is a named URL pattern. You can reference it by name in templates and Python code using the examples above." %}
+                        {% else %}
+                            {% trans "This URL pattern is unnamed. Consider adding a name to make it easier to reference." %}
+                        {% endif %}
+                    </p>
+                    {% if url.namespace %}
+                    <p style="margin-top: 10px;">
+                        {% blocktrans with ns=url.namespace %}
+                            This URL is part of the <strong>{{ ns }}</strong> namespace. Use the full namespaced name when reversing this URL from outside the namespace.
+                        {% endblocktrans %}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

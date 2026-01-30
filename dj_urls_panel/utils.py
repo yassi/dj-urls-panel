@@ -225,3 +225,19 @@ class UrlListInterface:
             "namespaces": len(namespaces),
             "namespace_list": sorted(namespaces),
         }
+
+    def get_url_by_pattern(self, pattern):
+        """
+        Get a specific URL by its pattern.
+
+        Args:
+            pattern: URL pattern to search for
+
+        Returns:
+            URL dictionary or None if not found
+        """
+        urls = self.get_url_list()
+        for url in urls:
+            if url["pattern"] == pattern:
+                return url
+        return None

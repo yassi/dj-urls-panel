@@ -119,7 +119,9 @@
                 {% for url in urls %}
                 <tr class="{% cycle 'row1' 'row2' %}">
                     <td>
-                        <code>{{ url.pattern }}</code>
+                        <a href="{% url 'dj_urls_panel:url_detail' url.pattern|urlencode %}" class="pattern-link">
+                            <code>{{ url.pattern }}</code>
+                        </a>
                     </td>
                     <td>
                         {% if url.name %}

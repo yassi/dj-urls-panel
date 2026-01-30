@@ -1,6 +1,7 @@
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render
 from django.contrib import admin
+from django.http import Http404
 
 from .utils import UrlListInterface
 
@@ -72,3 +73,38 @@ def index(request):
         }
     )
     return render(request, "admin/dj_urls_panel/index.html", context)
+
+
+@staff_member_required
+def url_detail(request, pattern):
+    """
+    Display detailed information about a specific URL.
+    """
+    # Get URL collection interface
+    url_interface = UrlListInterface()
+
+    # Decode the pattern from URL encoding
+    import urllib.parse
+
+    decoded_pattern = urllib.parse.unquote(pattern)
+
+    # Get the URL details
+    url = url_interface.get_url_by_pattern(decoded_pattern)
+
+    if not url:
+        raise Http404("URL not found")
+
+    # Extract short name (without namespace) if it has a namespace
+    short_name = None
+    if url["name"] and url["namespace"]:
+        short_name = url["name"].split(":")[-1]
+
+    context = admin.site.each_context(request)
+    context.update(
+        {
+            "title": f"URL Detail: {url['pattern']}",
+            "url": url,
+            "short_name": short_name,
+        }
+    )
+    return render(request, "admin/dj_urls_panel/detail.html", context)
