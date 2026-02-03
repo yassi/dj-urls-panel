@@ -18,3 +18,5 @@ build==1.3.0
 
 #documentation dependencies
 mkdocs-material==9.1.12
+
+dj-cache-panel

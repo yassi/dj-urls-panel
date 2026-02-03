@@ -88,13 +88,13 @@
     <!-- URLs Table -->
     <div class="module">
         {% if search_query or namespace_filter %}
-        <div class="results-info">
+        <p class="help">
             {% blocktrans count counter=total_displayed %}
                 Showing {{ counter }} URL
             {% plural %}
                 Showing {{ counter }} URLs
             {% endblocktrans %}
-        </div>
+        </p>
         {% endif %}
         
         {% if urls %}

@@ -61,15 +61,6 @@
                         {% endif %}
                     </div>
                 </div>
-
-                {% if url.app_name %}
-                <div class="detail-row">
-                    <div class="detail-label">{% trans "App Name" %}</div>
-                    <div class="detail-value">
-                        <span class="key-type-badge key-type-list">{{ url.app_name }}</span>
-                    </div>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
@@ -112,30 +103,5 @@ url = reverse('{{ url.name }}')</pre>
         </div>
     </div>
     {% endif %}
-
-    <!-- Pattern Information -->
-    <div class="module" style="margin-top: 20px;">
-        <h2>{% trans "Pattern Information" %}</h2>
-        <div class="url-detail-content">
-            <div class="detail-section">
-                <div class="info-block">
-                    <p>
-                        {% if url.name %}
-                            {% trans "This is a named URL pattern. You can reference it by name in templates and Python code using the examples above." %}
-                        {% else %}
-                            {% trans "This URL pattern is unnamed. Consider adding a name to make it easier to reference." %}
-                        {% endif %}
-                    </p>
-                    {% if url.namespace %}
-                    <p style="margin-top: 10px;">
-                        {% blocktrans with ns=url.namespace %}
-                            This URL is part of the <strong>{{ ns }}</strong> namespace. Use the full namespaced name when reversing this URL from outside the namespace.
-                        {% endblocktrans %}
-                    </p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 {% endblock %}
