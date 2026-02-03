@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dj-urls-panel"
-version = "0.1.0"
+version = "0.1.1"
 description = "Visualize Django URL routing inside the Django Admin, including patterns, views, namespaces, etc"
 readme = "README.md"
 license = {text = "MIT"}

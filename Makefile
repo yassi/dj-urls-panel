@@ -27,7 +27,7 @@ help:
 clean:
 	rm -rf build dist *.egg-info
 
-build: clean
+build: clean install
 	python -m build
 
 install_requirements:
@@ -84,7 +84,7 @@ coverage_html: test_coverage
 	@echo "Coverage report generated in htmlcov/index.html"
 	@echo "Open htmlcov/index.html in your browser to view the detailed report"
 
-publish:
+publish: build
 	twine upload --repository $(PYPI_REPO) dist/*
 
 docs: install
