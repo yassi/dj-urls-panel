@@ -212,8 +212,10 @@ class UrlListInterface:
                         else pattern.namespace
                     )
 
-                # Get the pattern prefix
+                # Get the pattern prefix and strip regex anchors before concatenation
+                # This prevents issues with DRF routers that use regex patterns with ^ and $
                 pattern_str = str(pattern.pattern)
+                pattern_str = self._strip_regex_anchors(pattern_str)
                 new_prefix = prefix + pattern_str
 
                 # Recursively extract patterns from included URLconf
@@ -225,10 +227,14 @@ class UrlListInterface:
 
             elif isinstance(pattern, URLPattern):
                 # This is an actual URL pattern
+                # Strip regex anchors from this component before concatenating with prefix
+                # This ensures patterns like "^users/$" become "users/" before being
+                # combined with a prefix like "api/" to produce "/api/users/" not "/api/^users/$"
                 pattern_str = str(pattern.pattern)
+                pattern_str = self._strip_regex_anchors(pattern_str)
                 full_pattern = prefix + pattern_str
 
-                # Clean up the pattern for display
+                # Clean up the pattern for display (ensure leading slash)
                 full_pattern = self._clean_pattern(full_pattern)
 
                 # Get view information
@@ -259,25 +265,40 @@ class UrlListInterface:
 
         return url_list
 
+    def _strip_regex_anchors(self, pattern_str):
+        """
+        Strip regex anchors (^ and $) from a pattern string component.
+        
+        This is necessary because Django REST Framework routers and other regex-based
+        patterns may include ^ and $ anchors. When these patterns are included with
+        a prefix (e.g., path("api/", include(router.urls))), we need to strip the
+        anchors from each component BEFORE concatenation to avoid malformed patterns
+        like "/api/^users/" instead of "/api/users/".
+        
+        Args:
+            pattern_str: Raw pattern string component
+            
+        Returns:
+            Pattern string with regex anchors removed
+        """
+        # Strip leading ^ and trailing $ from this pattern component
+        # These are regex anchors that should not appear in the middle of concatenated patterns
+        pattern_str = pattern_str.lstrip("^").rstrip("$")
+        return pattern_str
+
     def _clean_pattern(self, pattern):
         """
         Clean up a URL pattern for display.
 
         Args:
-            pattern: Raw pattern string
+            pattern: Raw pattern string (may already have components concatenated)
 
         Returns:
-            Cleaned pattern string
+            Cleaned pattern string with proper leading slash
         """
-        # Remove leading ^
-        pattern = pattern.lstrip("^")
-
         # Ensure it starts with /
         if not pattern.startswith("/"):
             pattern = "/" + pattern
-
-        # Remove trailing $
-        pattern = pattern.rstrip("$")
 
         return pattern
 
