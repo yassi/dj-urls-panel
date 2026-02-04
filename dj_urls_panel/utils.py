@@ -115,34 +115,58 @@ def extract_url_parameters(pattern):
     """
     Extract URL parameters from a URL pattern.
     
+    Supports both Django path-style (<type:name>) and regex-style ((?P<name>pattern)) parameters.
+    
     Returns a list of parameter dictionaries with name and type info.
     """
     import re
     
     parameters = []
+    seen_names = set()  # Track parameter names to avoid duplicates
     
-    # Match Django's path converters: <type:name> or <name>
-    path_param_pattern = r'<(?:(\w+):)?(\w+)>'
+    # FIRST: Match regex-style named groups: (?P<name>pattern)
+    # We do this first because path patterns can match the <name> inside (?P<name>...)
+    regex_param_pattern = r'\(\?P<(\w+)>[^)]+\)'
+    
+    for match in re.finditer(regex_param_pattern, pattern):
+        param_name = match.group(1)
+        
+        if param_name not in seen_names:
+            seen_names.add(param_name)
+            
+            parameters.append({
+                'name': param_name,
+                'type': 'regex',  # Indicate this is a regex parameter
+                'in': 'path',
+                'required': True,
+            })
+    
+    # SECOND: Match Django's path converters: <type:name> or <name>
+    # Only match if not preceded by "?P" to avoid matching inside regex named groups
+    path_param_pattern = r'(?<!\?P)<(?:(\w+):)?(\w+)>'
     
     for match in re.finditer(path_param_pattern, pattern):
         param_type = match.group(1) or 'str'
         param_name = match.group(2)
         
-        # Map Django path converters to more descriptive types
-        type_mapping = {
-            'int': 'integer',
-            'str': 'string',
-            'slug': 'slug',
-            'uuid': 'UUID',
-            'path': 'path',
-        }
-        
-        parameters.append({
-            'name': param_name,
-            'type': type_mapping.get(param_type, param_type),
-            'in': 'path',
-            'required': True,
-        })
+        if param_name not in seen_names:
+            seen_names.add(param_name)
+            
+            # Map Django path converters to more descriptive types
+            type_mapping = {
+                'int': 'integer',
+                'str': 'string',
+                'slug': 'slug',
+                'uuid': 'UUID',
+                'path': 'path',
+            }
+            
+            parameters.append({
+                'name': param_name,
+                'type': type_mapping.get(param_type, param_type),
+                'in': 'path',
+                'required': True,
+            })
     
     return parameters
 

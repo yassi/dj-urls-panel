@@ -66,14 +66,47 @@ document.querySelectorAll('.url-param-input').forEach(function(input) {
     input.addEventListener('input', updateUrlWithParams);
 });
 
+function cleanRegexSyntax(url) {
+    // Clean up regex syntax that remains after parameter replacement
+    // This converts regex patterns into actual URLs suitable for testing
+    
+    // Unescape common escaped characters (e.g., \. becomes .)
+    url = url.replace(/\\([.])/g, '$1');
+    
+    // Remove regex quantifiers that are now meaningless
+    // /? means "optional slash" - keep the slash
+    url = url.replace(/\/\?/g, '/');
+    
+    // Remove trailing $ anchor if present
+    url = url.replace(/\$$/g, '');
+    
+    // Remove leading ^ anchor if present  
+    url = url.replace(/^\^/g, '');
+    
+    return url;
+}
+
 function updateUrlWithParams() {
     let url = basePattern;
     document.querySelectorAll('.url-param-input').forEach(function(input) {
         const paramName = input.dataset.paramName;
         const value = input.value || '<' + paramName + '>';
-        // Replace both <type:name> and <name> formats
-        url = url.replace(new RegExp('<[^:>]*:?' + paramName + '>', 'g'), value);
+        
+        // Escape special regex characters in paramName for use in RegExp
+        const escapedParamName = paramName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        
+        // IMPORTANT: Do regex-style replacements FIRST to avoid matching <name> inside (?P<name>...)
+        // Replace regex-style named groups: (?P<name>pattern)
+        // This matches the entire (?P<name>...) including the regex pattern inside
+        url = url.replace(new RegExp('\\(\\?P<' + escapedParamName + '>[^)]+\\)', 'g'), value);
+        
+        // Then replace Django path-style parameters: <type:name> or <name>
+        url = url.replace(new RegExp('<[^:>]*:?' + escapedParamName + '>', 'g'), value);
     });
+    
+    // Clean up any remaining regex syntax
+    url = cleanRegexSyntax(url);
+    
     document.getElementById('test-url').value = "{{ base_url }}" + url;
     
     // Update cURL command when URL parameters change

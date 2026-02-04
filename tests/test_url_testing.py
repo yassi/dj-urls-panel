@@ -65,6 +65,35 @@ class TestExtractUrlParameters(CeleryPanelTestCase):
         self.assertEqual(len(params), 1)
         self.assertEqual(params[0]["name"], "id")
         self.assertEqual(params[0]["type"], "UUID")
+    
+    def test_regex_named_group_parameter(self):
+        """Test extracting regex-style named group parameters."""
+        params = extract_url_parameters("/api/articles/(?P<pk>[^/.]+)/")
+        
+        self.assertEqual(len(params), 1)
+        self.assertEqual(params[0]["name"], "pk")
+        self.assertEqual(params[0]["type"], "regex")
+    
+    def test_multiple_regex_parameters(self):
+        """Test extracting multiple regex-style parameters."""
+        params = extract_url_parameters("/api/(?P<year>[0-9]{4})/(?P<month>[0-9]{2})/")
+        
+        self.assertEqual(len(params), 2)
+        self.assertEqual(params[0]["name"], "year")
+        self.assertEqual(params[0]["type"], "regex")
+        self.assertEqual(params[1]["name"], "month")
+        self.assertEqual(params[1]["type"], "regex")
+    
+    def test_mixed_path_and_regex_parameters(self):
+        """Test URL with both path-style and regex-style parameters."""
+        params = extract_url_parameters("/api/articles/<int:id>/comments/(?P<comment_id>[0-9]+)/")
+        
+        self.assertEqual(len(params), 2)
+        # Regex parameters are extracted first, then path parameters
+        self.assertEqual(params[0]["name"], "comment_id")
+        self.assertEqual(params[0]["type"], "regex")
+        self.assertEqual(params[1]["name"], "id")
+        self.assertEqual(params[1]["type"], "integer")
 
 
 class TestGetViewHttpMethods(CeleryPanelTestCase):
