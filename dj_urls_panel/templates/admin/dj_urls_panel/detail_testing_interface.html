@@ -85,7 +85,11 @@
             <!-- cURL Command Display -->
             <div class="test-row">
                 <div class="test-input-group">
-                    <label>{% trans "cURL Command" %}</label>
+                    <label>
+                        {% trans "cURL Command" %}
+                        <span class="curl-copy-icon" id="curl-copy-icon" onclick="copyCurlCommand()" title="{% trans 'Copy to clipboard' %}">📋</span>
+                        <span class="curl-copy-feedback" id="curl-copy-feedback"></span>
+                    </label>
                     <div class="curl-display">
                         <pre id="curl-command" class="curl-command"></pre>
                     </div>

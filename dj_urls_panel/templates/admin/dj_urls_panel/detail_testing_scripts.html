@@ -236,6 +236,31 @@ function updateCurlCommand() {
     document.getElementById('curl-command').textContent = curl;
 }
 
+function copyCurlCommand() {
+    const curlText = document.getElementById('curl-command').textContent;
+    const feedback = document.getElementById('curl-copy-feedback');
+    
+    navigator.clipboard.writeText(curlText).then(function() {
+        // Show success feedback
+        feedback.textContent = '{% trans "Copied!" %}';
+        feedback.classList.add('show');
+        
+        // Fade out after a brief moment
+        setTimeout(function() {
+            feedback.classList.remove('show');
+        }, 1500);
+    }).catch(function(err) {
+        // Fallback: show error feedback
+        console.error('Failed to copy:', err);
+        feedback.textContent = '{% trans "Failed" %}';
+        feedback.classList.add('show', 'error');
+        
+        setTimeout(function() {
+            feedback.classList.remove('show', 'error');
+        }, 1500);
+    });
+}
+
 async function sendRequest() {
     const data = getRequestData();
     const responseRow = document.getElementById('response-row');
