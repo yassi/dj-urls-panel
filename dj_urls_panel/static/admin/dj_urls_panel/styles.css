@@ -1088,6 +1088,12 @@
     line-height: 1.5;
 }
 
+.test-url-input[readonly] {
+    background-color: var(--darkened-bg, #f5f5f5);
+    cursor: default;
+    color: var(--body-fg, #6b7280);
+}
+
 .test-url-input:focus,
 .test-method-select:focus {
     outline: none;
@@ -1687,6 +1693,11 @@
         background-color: var(--body-bg, #1f1f1f);
         color: var(--body-fg, #d4d4d4);
         border-color: var(--border-color, #3a3a3a);
+    }
+    
+    .test-url-input[readonly] {
+        background-color: var(--darkened-bg, #252525);
+        color: var(--body-fg, #9ca3af);
     }
 
     .url-param-input:focus,

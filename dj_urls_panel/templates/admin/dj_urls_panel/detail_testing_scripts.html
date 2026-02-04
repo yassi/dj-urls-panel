@@ -3,7 +3,7 @@
 <script>
 // Store serializer fields for sample generation
 const serializerFields = {{ serializer_fields_json|safe }};
-const basePattern = "{{ url.pattern }}";
+const basePattern = "{{ url.pattern|safe }}";
 const executeRequestUrl = "{% url 'dj_urls_panel:execute_request' %}";
 const csrfToken = "{{ csrf_token }}";
 
@@ -58,9 +58,6 @@ document.getElementById('auth-type').addEventListener('change', function() {
 // Update cURL when auth value changes
 document.getElementById('auth-value').addEventListener('input', updateCurlCommand);
 
-// Update cURL when URL changes
-document.getElementById('test-url').addEventListener('input', updateCurlCommand);
-
 // Update cURL when body changes
 document.getElementById('request-body').addEventListener('input', updateCurlCommand);
 
@@ -78,6 +75,9 @@ function updateUrlWithParams() {
         url = url.replace(new RegExp('<[^:>]*:?' + paramName + '>', 'g'), value);
     });
     document.getElementById('test-url').value = "{{ base_url }}" + url;
+    
+    // Update cURL command when URL parameters change
+    updateCurlCommand();
 }
 
 function addHeader() {
