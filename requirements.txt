@@ -1,6 +1,7 @@
 # core dependencies
 Django>=4.2
 djangorestframework>=3.14.0
+requests>=2.28.0  # For URL testing feature
 
 # Testing dependencies
 pytest>=7.0.0

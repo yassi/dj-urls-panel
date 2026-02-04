@@ -2,6 +2,151 @@ from django.urls import URLPattern, URLResolver, get_resolver
 from django.conf import settings
 
 
+def get_drf_serializer_info(view_class):
+    """
+    Extract serializer information from a DRF view class.
+    
+    Returns a dictionary with serializer details or None if not a DRF view.
+    """
+    if view_class is None:
+        return None
+    
+    try:
+        # Check if it's a DRF view by looking for serializer_class
+        serializer_class = getattr(view_class, 'serializer_class', None)
+        
+        if serializer_class is None:
+            # Try to get it from get_serializer_class method
+            if hasattr(view_class, 'get_serializer_class'):
+                # We can't call it without an instance, but we can note it exists
+                return {
+                    'has_serializer': True,
+                    'serializer_class': None,
+                    'serializer_name': 'Dynamic (via get_serializer_class)',
+                    'fields': [],
+                    'is_dynamic': True,
+                }
+            return None
+        
+        # Get serializer fields
+        fields_info = []
+        try:
+            # Create instance to get fields
+            serializer_instance = serializer_class()
+            fields = serializer_instance.fields
+            
+            for field_name, field in fields.items():
+                field_type = type(field).__name__
+                required = getattr(field, 'required', False)
+                read_only = getattr(field, 'read_only', False)
+                write_only = getattr(field, 'write_only', False)
+                help_text = getattr(field, 'help_text', '') or ''
+                
+                # Get choices if available
+                choices = None
+                if hasattr(field, 'choices') and field.choices:
+                    choices = list(field.choices.keys()) if isinstance(field.choices, dict) else list(field.choices)
+                
+                fields_info.append({
+                    'name': field_name,
+                    'type': field_type,
+                    'required': required,
+                    'read_only': read_only,
+                    'write_only': write_only,
+                    'help_text': str(help_text),
+                    'choices': choices,
+                })
+        except Exception:
+            # If we can't instantiate, just get basic info
+            pass
+        
+        return {
+            'has_serializer': True,
+            'serializer_class': f"{serializer_class.__module__}.{serializer_class.__name__}",
+            'serializer_name': serializer_class.__name__,
+            'fields': fields_info,
+            'is_dynamic': False,
+        }
+    except Exception:
+        return None
+
+
+def get_view_http_methods(callback):
+    """
+    Extract allowed HTTP methods from a view.
+    
+    Returns a list of HTTP methods the view supports.
+    """
+    methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']
+    allowed_methods = []
+    
+    if callback is None:
+        return ['GET']
+    
+    try:
+        # Check for DRF ViewSet or APIView
+        view_class = getattr(callback, 'view_class', None) or getattr(callback, 'cls', None)
+        
+        if view_class:
+            # Check for http_method_names attribute
+            if hasattr(view_class, 'http_method_names'):
+                return [m.upper() for m in view_class.http_method_names if m.upper() in methods]
+            
+            # Check for action methods (DRF ViewSets)
+            for method in methods:
+                method_lower = method.lower()
+                if hasattr(view_class, method_lower):
+                    allowed_methods.append(method)
+            
+            if allowed_methods:
+                return allowed_methods
+        
+        # For function-based views, check if they have http_method_names or decorators
+        if hasattr(callback, 'http_method_names'):
+            return [m.upper() for m in callback.http_method_names if m.upper() in methods]
+        
+        # Default to common methods
+        return ['GET', 'POST']
+    except Exception:
+        return ['GET', 'POST']
+
+
+def extract_url_parameters(pattern):
+    """
+    Extract URL parameters from a URL pattern.
+    
+    Returns a list of parameter dictionaries with name and type info.
+    """
+    import re
+    
+    parameters = []
+    
+    # Match Django's path converters: <type:name> or <name>
+    path_param_pattern = r'<(?:(\w+):)?(\w+)>'
+    
+    for match in re.finditer(path_param_pattern, pattern):
+        param_type = match.group(1) or 'str'
+        param_name = match.group(2)
+        
+        # Map Django path converters to more descriptive types
+        type_mapping = {
+            'int': 'integer',
+            'str': 'string',
+            'slug': 'slug',
+            'uuid': 'UUID',
+            'path': 'path',
+        }
+        
+        parameters.append({
+            'name': param_name,
+            'type': type_mapping.get(param_type, param_type),
+            'in': 'path',
+            'required': True,
+        })
+    
+    return parameters
+
+
 class UrlListInterface:
     """
     Interface for collecting and organizing URL patterns from Django's URLconf.
@@ -106,6 +251,9 @@ class UrlListInterface:
                         "app_name": pattern.pattern.name
                         if hasattr(pattern.pattern, "name")
                         else None,
+                        "serializer_info": view_info.get("serializer_info"),
+                        "http_methods": view_info.get("http_methods", ["GET"]),
+                        "url_parameters": view_info.get("url_parameters", []),
                     }
                 )
 
@@ -141,11 +289,12 @@ class UrlListInterface:
             pattern: URLPattern object
 
         Returns:
-            Dictionary with view_name and view_class
+            Dictionary with view_name, view_class, serializer_info, and http_methods
         """
         callback = pattern.callback
         view_name = None
         view_class = None
+        view_class_obj = None
 
         if callback:
             # Get the module and name
@@ -158,13 +307,26 @@ class UrlListInterface:
 
             # Check if it's a class-based view
             if hasattr(callback, "view_class"):
+                view_class_obj = callback.view_class
                 view_class = callback.view_class.__name__
                 if hasattr(callback.view_class, "__module__"):
                     view_class = f"{callback.view_class.__module__}.{view_class}"
 
+        # Get DRF serializer info
+        serializer_info = get_drf_serializer_info(view_class_obj)
+        
+        # Get HTTP methods
+        http_methods = get_view_http_methods(callback)
+        
+        # Get URL parameters
+        url_params = extract_url_parameters(str(pattern.pattern))
+
         return {
             "view_name": view_name or "Unknown",
             "view_class": view_class,
+            "serializer_info": serializer_info,
+            "http_methods": http_methods,
+            "url_parameters": url_params,
         }
 
     def get_grouped_urls(self):

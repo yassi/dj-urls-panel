@@ -1,0 +1,344 @@
+{% load i18n %}
+
+<script>
+// Store serializer fields for sample generation
+const serializerFields = {{ serializer_fields_json|safe }};
+const basePattern = "{{ url.pattern }}";
+const executeRequestUrl = "{% url 'dj_urls_panel:execute_request' %}";
+const csrfToken = "{{ csrf_token }}";
+
+// Toggle body row visibility based on method and update method color
+document.getElementById('test-method').addEventListener('change', function() {
+    const bodyRow = document.getElementById('body-row');
+    const methodsWithBody = ['POST', 'PUT', 'PATCH'];
+    if (methodsWithBody.includes(this.value)) {
+        bodyRow.style.display = 'block';
+    } else {
+        bodyRow.style.display = 'none';
+    }
+    
+    // Update method select background color based on selection
+    updateMethodColor(this);
+    
+    // Update cURL command
+    updateCurlCommand();
+});
+
+function updateMethodColor(select) {
+    const colors = {
+        'GET': '#61affe',
+        'POST': '#49cc90',
+        'PUT': '#fca130',
+        'PATCH': '#50e3c2',
+        'DELETE': '#f93e3e',
+        'HEAD': '#9012fe',
+        'OPTIONS': '#0d5aa7'
+    };
+    select.style.backgroundColor = colors[select.value] || '#61affe';
+}
+
+// Toggle auth value input based on auth type
+document.getElementById('auth-type').addEventListener('change', function() {
+    const authValueInput = document.getElementById('auth-value');
+    if (this.value) {
+        authValueInput.disabled = false;
+        if (this.value === 'basic') {
+            authValueInput.placeholder = "{% trans 'username:password' %}";
+        } else {
+            authValueInput.placeholder = "{% trans 'Enter token...' %}";
+        }
+    } else {
+        authValueInput.disabled = true;
+        authValueInput.value = '';
+        authValueInput.placeholder = "{% trans 'Token or username:password...' %}";
+    }
+    updateCurlCommand();
+});
+
+// Update cURL when auth value changes
+document.getElementById('auth-value').addEventListener('input', updateCurlCommand);
+
+// Update cURL when URL changes
+document.getElementById('test-url').addEventListener('input', updateCurlCommand);
+
+// Update cURL when body changes
+document.getElementById('request-body').addEventListener('input', updateCurlCommand);
+
+// Update URL when parameters change
+document.querySelectorAll('.url-param-input').forEach(function(input) {
+    input.addEventListener('input', updateUrlWithParams);
+});
+
+function updateUrlWithParams() {
+    let url = basePattern;
+    document.querySelectorAll('.url-param-input').forEach(function(input) {
+        const paramName = input.dataset.paramName;
+        const value = input.value || '<' + paramName + '>';
+        // Replace both <type:name> and <name> formats
+        url = url.replace(new RegExp('<[^:>]*:?' + paramName + '>', 'g'), value);
+    });
+    document.getElementById('test-url').value = "{{ base_url }}" + url;
+}
+
+function addHeader() {
+    const container = document.getElementById('headers-container');
+    const row = document.createElement('div');
+    row.className = 'header-row';
+    row.innerHTML = `
+        <input type="text" class="header-key" placeholder="{% trans 'Header name' %}">
+        <input type="text" class="header-value" placeholder="{% trans 'Header value' %}">
+        <button type="button" class="remove-header-btn" onclick="removeHeader(this)">×</button>
+    `;
+    container.appendChild(row);
+    
+    // Add event listeners to new inputs
+    row.querySelector('.header-key').addEventListener('input', updateCurlCommand);
+    row.querySelector('.header-value').addEventListener('input', updateCurlCommand);
+    
+    updateCurlCommand();
+}
+
+function removeHeader(btn) {
+    const row = btn.parentElement;
+    const container = row.parentElement;
+    if (container.children.length > 1) {
+        row.remove();
+    } else {
+        // Clear the inputs instead of removing the last row
+        row.querySelectorAll('input').forEach(input => input.value = '');
+    }
+    updateCurlCommand();
+}
+
+function getHeaders() {
+    const headers = {};
+    document.querySelectorAll('.header-row').forEach(function(row) {
+        const key = row.querySelector('.header-key').value.trim();
+        const value = row.querySelector('.header-value').value.trim();
+        if (key && value) {
+            headers[key] = value;
+        }
+    });
+    return headers;
+}
+
+function getRequestData() {
+    return {
+        url: document.getElementById('test-url').value,
+        method: document.getElementById('test-method').value,
+        headers: getHeaders(),
+        body: document.getElementById('request-body').value,
+        auth_type: document.getElementById('auth-type').value || null,
+        auth_value: document.getElementById('auth-value').value || null,
+    };
+}
+
+function formatJson() {
+    const textarea = document.getElementById('request-body');
+    try {
+        const parsed = JSON.parse(textarea.value);
+        textarea.value = JSON.stringify(parsed, null, 2);
+    } catch (e) {
+        alert("{% trans 'Invalid JSON format' %}");
+    }
+}
+
+function generateSampleBody() {
+    const sample = {};
+    serializerFields.forEach(function(field) {
+        if (!field.read_only) {
+            let value;
+            switch (field.type) {
+                case 'CharField':
+                case 'TextField':
+                    value = field.choices ? field.choices[0] : 'string';
+                    break;
+                case 'IntegerField':
+                case 'FloatField':
+                case 'DecimalField':
+                    value = 0;
+                    break;
+                case 'BooleanField':
+                    value = true;
+                    break;
+                case 'EmailField':
+                    value = 'user@example.com';
+                    break;
+                case 'URLField':
+                    value = 'https://example.com';
+                    break;
+                case 'DateField':
+                    value = new Date().toISOString().split('T')[0];
+                    break;
+                case 'DateTimeField':
+                    value = new Date().toISOString();
+                    break;
+                case 'UUIDField':
+                    value = '00000000-0000-0000-0000-000000000000';
+                    break;
+                case 'ListField':
+                case 'JSONField':
+                    value = [];
+                    break;
+                case 'DictField':
+                    value = {};
+                    break;
+                default:
+                    value = null;
+            }
+            sample[field.name] = value;
+        }
+    });
+    document.getElementById('request-body').value = JSON.stringify(sample, null, 2);
+    updateCurlCommand();
+}
+
+function generateCurlCommand() {
+    const data = getRequestData();
+    let parts = ['curl'];
+    
+    // Add method
+    if (data.method !== 'GET') {
+        parts.push(`-X ${data.method}`);
+    }
+    
+    // Add authentication
+    if (data.auth_type && data.auth_value) {
+        if (data.auth_type === 'basic') {
+            parts.push(`-u "${data.auth_value}"`);
+        } else if (data.auth_type === 'bearer') {
+            parts.push(`-H "Authorization: Bearer ${data.auth_value}"`);
+        } else if (data.auth_type === 'token') {
+            parts.push(`-H "Authorization: Token ${data.auth_value}"`);
+        }
+    }
+    
+    // Add headers
+    for (const [key, value] of Object.entries(data.headers)) {
+        parts.push(`-H "${key}: ${value}"`);
+    }
+    
+    // Add body
+    if (data.body && ['POST', 'PUT', 'PATCH'].includes(data.method)) {
+        // Escape single quotes in body
+        const escapedBody = data.body.replace(/'/g, "'\\''");
+        parts.push(`-d '${escapedBody}'`);
+    }
+    
+    // Add URL (quoted)
+    parts.push(`"${data.url}"`);
+    
+    return parts.join(' \\\n  ');
+}
+
+function updateCurlCommand() {
+    const curl = generateCurlCommand();
+    document.getElementById('curl-command').textContent = curl;
+}
+
+async function sendRequest() {
+    const data = getRequestData();
+    const responseRow = document.getElementById('response-row');
+    const responseStatus = document.getElementById('response-status');
+    const responseTime = document.getElementById('response-time');
+    const responseBody = document.getElementById('response-body');
+    const responseHeaders = document.getElementById('response-headers');
+    
+    // Show loading state
+    responseRow.style.display = 'block';
+    responseStatus.textContent = '{% trans "Loading..." %}';
+    responseStatus.className = 'response-status';
+    responseTime.textContent = '';
+    responseBody.textContent = '';
+    responseHeaders.textContent = '';
+    
+    try {
+        const response = await fetch(executeRequestUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify(data),
+        });
+        
+        const result = await response.json();
+        
+        if (result.error) {
+            responseStatus.textContent = '{% trans "Error" %}';
+            responseStatus.className = 'response-status status-error';
+            responseBody.textContent = result.error;
+            return;
+        }
+        
+        // Display status
+        responseStatus.textContent = `${result.status_code} ${result.status_text}`;
+        if (result.status_code >= 200 && result.status_code < 300) {
+            responseStatus.className = 'response-status status-success';
+        } else if (result.status_code >= 400) {
+            responseStatus.className = 'response-status status-error';
+        } else {
+            responseStatus.className = 'response-status status-info';
+        }
+        
+        // Display time
+        responseTime.textContent = `${result.elapsed_ms}ms`;
+        
+        // Display body
+        if (result.is_json) {
+            responseBody.textContent = JSON.stringify(result.body, null, 2);
+        } else {
+            responseBody.textContent = result.body;
+        }
+        
+        // Display headers
+        let headersText = '';
+        for (const [key, value] of Object.entries(result.headers)) {
+            headersText += `${key}: ${value}\n`;
+        }
+        responseHeaders.textContent = headersText;
+        
+    } catch (e) {
+        responseStatus.textContent = '{% trans "Error" %}';
+        responseStatus.className = 'response-status status-error';
+        responseBody.textContent = e.message || "{% trans 'Request failed' %}";
+    }
+}
+
+function showResponseTab(tab) {
+    document.querySelectorAll('.response-tab').forEach(function(t) {
+        t.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    if (tab === 'body') {
+        document.getElementById('response-body-container').style.display = 'block';
+        document.getElementById('response-headers-container').style.display = 'none';
+    } else {
+        document.getElementById('response-body-container').style.display = 'none';
+        document.getElementById('response-headers-container').style.display = 'block';
+    }
+}
+
+// Initialize body row visibility and method color
+document.addEventListener('DOMContentLoaded', function() {
+    const methodSelect = document.getElementById('test-method');
+    const method = methodSelect.value;
+    const bodyRow = document.getElementById('body-row');
+    const methodsWithBody = ['POST', 'PUT', 'PATCH'];
+    if (!methodsWithBody.includes(method)) {
+        bodyRow.style.display = 'none';
+    }
+    
+    // Set initial method color
+    updateMethodColor(methodSelect);
+    
+    // Add event listeners to existing header inputs
+    document.querySelectorAll('.header-key, .header-value').forEach(function(input) {
+        input.addEventListener('input', updateCurlCommand);
+    });
+    
+    // Generate initial cURL command
+    updateCurlCommand();
+});
+</script>

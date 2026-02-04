@@ -18,7 +18,16 @@ Visualize Django URL routing inside the Django Admin, including patterns, views,
 
 ## Features
 
-- **TBD**: Add your main features here
+- **URL Visualization**: View all Django URL patterns in an organized, searchable interface
+- **URL Testing Interface**: Swagger-like interface for testing URLs with:
+  - HTTP method selection
+  - Header specification
+  - Authentication support (Bearer, Token, Basic Auth)
+  - Request body editor with JSON formatting
+  - cURL command generation with copy functionality
+- **DRF Integration**: Automatic detection and visualization of Django REST Framework serializers
+- **Search & Filter**: Search URLs by pattern, name, or view function
+- **Namespace Support**: Filter and organize URLs by namespace
 
 
 ### Project Structure

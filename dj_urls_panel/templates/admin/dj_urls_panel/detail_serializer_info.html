@@ -1,0 +1,54 @@
+{% load i18n %}
+
+{% if serializer_info %}
+<!-- DRF Serializer Information -->
+<div class="module" style="margin-top: 20px;">
+    <h2>{% trans "Serializer" %}: {{ serializer_info.serializer_name }}</h2>
+    <div class="url-detail-content">
+        <div class="serializer-info">
+            <div class="detail-row">
+                <div class="detail-label">{% trans "Serializer Class" %}</div>
+                <div class="detail-value">
+                    <code class="detail-code">{{ serializer_info.serializer_class }}</code>
+                </div>
+            </div>
+            
+            {% if serializer_info.fields %}
+            <div class="serializer-fields">
+                <h3>{% trans "Fields" %}</h3>
+                <table class="serializer-fields-table">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Field" %}</th>
+                            <th>{% trans "Type" %}</th>
+                            <th>{% trans "Required" %}</th>
+                            <th>{% trans "Read Only" %}</th>
+                            <th>{% trans "Description" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for field in serializer_info.fields %}
+                        <tr>
+                            <td><code>{{ field.name }}</code></td>
+                            <td><span class="field-type-badge">{{ field.type }}</span></td>
+                            <td class="field-check-cell">
+                                {% if field.required %}
+                                    <span class="field-checkmark">✓</span>
+                                {% endif %}
+                            </td>
+                            <td class="field-check-cell">
+                                {% if field.read_only %}
+                                    <span class="field-checkmark">✓</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ field.help_text|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
