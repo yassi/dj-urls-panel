@@ -349,6 +349,38 @@ class TestExcludeUrls(CeleryPanelTestCase):
             self.assertEqual(len(api_urls), 0, "API URLs should be excluded")
 
 
+class TestUrlConfig(CeleryPanelTestCase):
+    """Test cases for URL_CONFIG setting."""
+
+    def test_url_config_uses_custom_urlconf(self):
+        """Test that URL_CONFIG setting uses a custom URLconf."""
+        from dj_urls_panel.utils import UrlListInterface
+        
+        # Test with custom URL_CONFIG
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'URL_CONFIG': 'example_project.urls'}):
+            interface = UrlListInterface()
+            self.assertEqual(interface.urlconf, 'example_project.urls')
+    
+    def test_url_config_defaults_to_root_urlconf(self):
+        """Test that it defaults to ROOT_URLCONF when URL_CONFIG is not set."""
+        from dj_urls_panel.utils import UrlListInterface
+        from django.conf import settings
+        
+        # Test without URL_CONFIG
+        with self.settings(DJ_URLS_PANEL_SETTINGS={}):
+            interface = UrlListInterface()
+            self.assertEqual(interface.urlconf, settings.ROOT_URLCONF)
+    
+    def test_explicit_urlconf_overrides_url_config(self):
+        """Test that explicit urlconf parameter overrides URL_CONFIG."""
+        from dj_urls_panel.utils import UrlListInterface
+        
+        # Test with both URL_CONFIG and explicit urlconf
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'URL_CONFIG': 'example_project.urls'}):
+            interface = UrlListInterface(urlconf='some.other.urls')
+            self.assertEqual(interface.urlconf, 'some.other.urls')
+
+
 class TestDrfSerializerInfo(CeleryPanelTestCase):
     """Test cases for DRF serializer information extraction."""
 

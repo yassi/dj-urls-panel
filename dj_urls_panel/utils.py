@@ -218,12 +218,25 @@ class UrlListInterface:
 
         Args:
             urlconf: String path to URLconf module (e.g., 'myproject.urls')
-                    If None, uses settings.ROOT_URLCONF
+                    If None, checks DJ_URLS_PANEL_SETTINGS['URL_CONFIG'],
+                    then falls back to settings.ROOT_URLCONF
         """
-        self.urlconf = urlconf or settings.ROOT_URLCONF
+        # Load settings first to get URL_CONFIG if available
+        self._load_settings()
+        
+        # Determine which URLconf to use:
+        # 1. Explicit urlconf parameter
+        # 2. URL_CONFIG from DJ_URLS_PANEL_SETTINGS
+        # 3. ROOT_URLCONF from Django settings
+        if urlconf:
+            self.urlconf = urlconf
+        elif hasattr(self, 'url_config') and self.url_config:
+            self.urlconf = self.url_config
+        else:
+            self.urlconf = settings.ROOT_URLCONF
+        
         self.resolver = get_resolver(self.urlconf)
         self._url_patterns = []
-        self._load_settings()
 
     def get_url_list(self):
         """
@@ -259,6 +272,9 @@ class UrlListInterface:
         import re
         
         panel_settings = getattr(settings, 'DJ_URLS_PANEL_SETTINGS', {})
+        
+        # Get URL_CONFIG setting for custom URLconf
+        self.url_config = panel_settings.get('URL_CONFIG', None)
         
         # Get EXCLUDE_URLS patterns (can be strings or compiled regex patterns)
         exclude_patterns = panel_settings.get('EXCLUDE_URLS', [])

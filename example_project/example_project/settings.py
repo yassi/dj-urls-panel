@@ -148,6 +148,7 @@ REST_FRAMEWORK = {
 }
 
 DJ_URLS_PANEL_SETTINGS = {
+    "URL_CONFIG": "example_project.urls",
     "EXCLUDE_URLS": [
         r"^admin/",  # Regex pattern to exclude URLs starting with "admin/"
     ],
