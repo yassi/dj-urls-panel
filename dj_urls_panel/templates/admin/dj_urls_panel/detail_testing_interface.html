@@ -99,6 +99,9 @@
             <!-- Action Buttons -->
             <div class="test-row">
                 <button type="button" class="button default" onclick="sendRequest()">{% trans "Send Request" %}</button>
+                <div id="param-warning" class="param-warning" style="display: none; margin-top: 10px; color: #ba2121; font-size: 12px;">
+                    {% trans "Please fill in all URL parameters before sending the request." %}
+                </div>
             </div>
 
             <!-- Response Display -->

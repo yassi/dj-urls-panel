@@ -111,6 +111,41 @@ function updateUrlWithParams() {
     
     // Update cURL command when URL parameters change
     updateCurlCommand();
+    
+    // Update send button state
+    updateSendButtonState();
+}
+
+function hasUnfilledParameters() {
+    // Check if any parameter inputs are empty
+    let hasEmpty = false;
+    document.querySelectorAll('.url-param-input').forEach(function(input) {
+        if (!input.value || input.value.trim() === '') {
+            hasEmpty = true;
+        }
+    });
+    return hasEmpty;
+}
+
+function updateSendButtonState() {
+    const sendButton = document.querySelector('.button.default[onclick="sendRequest()"]');
+    const warningMessage = document.getElementById('param-warning');
+    
+    if (hasUnfilledParameters()) {
+        sendButton.disabled = true;
+        sendButton.style.opacity = '0.5';
+        sendButton.style.cursor = 'not-allowed';
+        if (warningMessage) {
+            warningMessage.style.display = 'block';
+        }
+    } else {
+        sendButton.disabled = false;
+        sendButton.style.opacity = '1';
+        sendButton.style.cursor = 'pointer';
+        if (warningMessage) {
+            warningMessage.style.display = 'none';
+        }
+    }
 }
 
 function addHeader() {
@@ -398,5 +433,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Generate initial cURL command
     updateCurlCommand();
+    
+    // Set initial send button state
+    updateSendButtonState();
 });
 </script>
