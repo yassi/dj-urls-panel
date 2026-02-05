@@ -20,21 +20,34 @@ document.getElementById('test-method').addEventListener('change', function() {
     // Update method select background color based on selection
     updateMethodColor(this);
     
+    // Update send button color
+    updateSendButtonColor();
+    
     // Update cURL command
     updateCurlCommand();
 });
 
+const methodColors = {
+    'GET': '#61affe',
+    'POST': '#49cc90',
+    'PUT': '#fca130',
+    'PATCH': '#50e3c2',
+    'DELETE': '#f93e3e',
+    'HEAD': '#9012fe',
+    'OPTIONS': '#0d5aa7'
+};
+
 function updateMethodColor(select) {
-    const colors = {
-        'GET': '#61affe',
-        'POST': '#49cc90',
-        'PUT': '#fca130',
-        'PATCH': '#50e3c2',
-        'DELETE': '#f93e3e',
-        'HEAD': '#9012fe',
-        'OPTIONS': '#0d5aa7'
-    };
-    select.style.backgroundColor = colors[select.value] || '#61affe';
+    select.style.backgroundColor = methodColors[select.value] || '#61affe';
+}
+
+function updateSendButtonColor() {
+    const method = document.getElementById('test-method').value;
+    const sendButton = document.getElementById('send-request-btn');
+    const color = methodColors[method] || '#61affe';
+    
+    sendButton.style.backgroundColor = color;
+    sendButton.style.borderColor = color;
 }
 
 // Toggle auth value input based on auth type
@@ -134,7 +147,7 @@ function hasUnfilledParameters() {
 }
 
 function updateSendButtonState() {
-    const sendButton = document.querySelector('.button.default[onclick="sendRequest()"]');
+    const sendButton = document.getElementById('send-request-btn');
     const warningMessage = document.getElementById('param-warning');
     
     if (hasUnfilledParameters()) {
@@ -443,6 +456,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Set initial method color
     updateMethodColor(methodSelect);
+    
+    // Set initial send button color
+    updateSendButtonColor();
     
     // Add event listeners to existing header inputs
     document.querySelectorAll('.header-key, .header-value').forEach(function(input) {
