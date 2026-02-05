@@ -11,97 +11,29 @@
     </div>
 
     <!-- URL Detail Card -->
-    <div class="module">
-        <h2>{% trans "URL Pattern" %}</h2>
-        <div class="url-detail-content">
-            <div class="detail-section">
-                <div class="detail-row">
-                    <div class="detail-label">{% trans "Pattern" %}</div>
-                    <div class="detail-value">
-                        <code class="detail-code">{{ url.pattern }}</code>
-                    </div>
-                </div>
+    {% include "admin/dj_urls_panel/detail_card.html" %}
 
-                <div class="detail-row">
-                    <div class="detail-label">{% trans "Name" %}</div>
-                    <div class="detail-value">
-                        {% if url.name %}
-                            <span class="key-type-badge key-type-string">{{ url.name }}</span>
-                        {% else %}
-                            <span style="color: #999; font-style: italic;">{% trans "unnamed" %}</span>
-                        {% endif %}
-                    </div>
-                </div>
+    <!-- DRF Serializer Information -->
+    {% include "admin/dj_urls_panel/detail_serializer_info.html" %}
 
-                <div class="detail-row">
-                    <div class="detail-label">{% trans "View Function" %}</div>
-                    <div class="detail-value">
-                        <code class="detail-code">{{ url.view }}</code>
-                    </div>
-                </div>
-
-                {% if url.view_class %}
-                <div class="detail-row">
-                    <div class="detail-label">{% trans "View Class" %}</div>
-                    <div class="detail-value">
-                        <code class="detail-code">{{ url.view_class }}</code>
-                    </div>
-                </div>
-                {% endif %}
-
-                <div class="detail-row">
-                    <div class="detail-label">{% trans "Namespace" %}</div>
-                    <div class="detail-value">
-                        {% if url.namespace %}
-                            <a href="{% url 'dj_urls_panel:index' %}?namespace={{ url.namespace }}" class="namespace-link">
-                                <span class="key-type-badge key-type-hash">{{ url.namespace }}</span>
-                            </a>
-                        {% else %}
-                            <span style="color: #999;">{% trans "None" %}</span>
-                        {% endif %}
-                    </div>
-                </div>
+    <!-- URL Testing Interface -->
+    {% if enable_testing %}
+        {% include "admin/dj_urls_panel/detail_testing_interface.html" %}
+    {% else %}
+        <div class="module" style="margin-top: 20px;">
+            <div style="padding: 20px; text-align: center; color: #666;">
+                <p><strong>{% trans "URL Testing Interface is Disabled" %}</strong></p>
+                <p>{% trans "To enable URL testing, set" %} <code>ENABLE_TESTING=True</code> {% trans "in" %} <code>DJ_URLS_PANEL_SETTINGS</code>.</p>
             </div>
         </div>
-    </div>
-
-    <!-- URL Reversal Example -->
-    {% if url.name %}
-    <div class="module" style="margin-top: 20px;">
-        <h2>{% trans "Usage Examples" %}</h2>
-        <div class="url-detail-content">
-            <div class="detail-section">
-                <div class="example-block">
-                    <h3>{% trans "Template Usage" %}</h3>
-                    <pre class="code-example">{% templatetag openblock %} url '{{ url.name }}' {% templatetag closeblock %}</pre>
-                </div>
-
-                <div class="example-block">
-                    <h3>{% trans "Python Usage" %}</h3>
-                    <pre class="code-example">from django.urls import reverse
-
-url = reverse('{{ url.name }}')</pre>
-                </div>
-
-                {% if url.namespace %}
-                <div class="example-block">
-                    <h3>{% trans "Namespace Information" %}</h3>
-                    <pre class="code-example"># Short name (within same namespace)
-{{ short_name }}
-
-# Full namespaced name (from anywhere)
-{{ url.name }}
-
-# Template usage
-{% templatetag openblock %} url '{{ url.name }}' {% templatetag closeblock %}
-
-# Python usage
-url = reverse('{{ url.name }}')</pre>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
     {% endif %}
+
+    <!-- URL Reversal Examples -->
+    {% include "admin/dj_urls_panel/detail_usage_examples.html" %}
 </div>
+
+<!-- Testing Interface JavaScript -->
+{% if enable_testing %}
+    {% include "admin/dj_urls_panel/detail_testing_scripts.html" %}
+{% endif %}
 {% endblock %}

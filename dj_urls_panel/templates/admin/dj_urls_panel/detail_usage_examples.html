@@ -1,0 +1,40 @@
+{% load i18n %}
+
+{% if url.name %}
+<!-- URL Reversal Examples -->
+<div class="module" style="margin-top: 20px;">
+    <h2>{% trans "Usage Examples" %}</h2>
+    <div class="url-detail-content">
+        <div class="detail-section">
+            <div class="example-block">
+                <h3>{% trans "Template Usage" %}</h3>
+                <pre class="code-example">{% templatetag openblock %} url '{{ url.name }}' {% templatetag closeblock %}</pre>
+            </div>
+
+            <div class="example-block">
+                <h3>{% trans "Python Usage" %}</h3>
+                <pre class="code-example">from django.urls import reverse
+
+url = reverse('{{ url.name }}')</pre>
+            </div>
+
+            {% if url.namespace %}
+            <div class="example-block">
+                <h3>{% trans "Namespace Information" %}</h3>
+                <pre class="code-example"># Short name (within same namespace)
+{{ short_name }}
+
+# Full namespaced name (from anywhere)
+{{ url.name }}
+
+# Template usage
+{% templatetag openblock %} url '{{ url.name }}' {% templatetag closeblock %}
+
+# Python usage
+url = reverse('{{ url.name }}')</pre>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}

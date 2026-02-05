@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "dj_cache_panel",
+    # "dj_cache_panel",
     "dj_urls_panel",
     "api",
     "example_project",  # For management commands
@@ -145,6 +145,19 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
+}
+
+DJ_URLS_PANEL_SETTINGS = {
+    "URL_CONFIG": "example_project.urls",
+    "EXCLUDE_URLS": [
+        r"^admin/",  # Regex pattern to exclude URLs starting with "admin/"
+    ],
+    # Enable URL testing interface (set to False in production)
+    "ENABLE_TESTING": True,
+    # Whitelist hosts for URL testing (None applies default blocklist only)
+    # For production, either disable testing or whitelist specific hosts:
+    # "ALLOWED_HOSTS": ["localhost", "127.0.0.1", "example.com"],
+    "ALLOWED_HOSTS": ["localhost", "127.0.0.1"],
 }
 
 

@@ -1,0 +1,133 @@
+{% load i18n %}
+
+<!-- URL Testing Interface -->
+<div class="module">
+    <h2>{% trans "Test Request" %}</h2>
+    <div class="swagger-content">
+        <div class="test-interface">
+            <!-- URL Input with Method -->
+            <div class="test-row">
+                <div class="test-input-group method-url-group">
+                    <label for="test-method">{% trans "Method" %}</label>
+                    <div class="method-url-input">
+                        <select id="test-method" class="test-method-select">
+                            {% for method in http_methods %}
+                                <option value="{{ method }}">{{ method }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="text" id="test-url" class="test-url-input" value="{{ test_url }}" placeholder="{% trans 'Enter URL...' %}" readonly>
+                    </div>
+                </div>
+            </div>
+
+            {% if url_parameters %}
+            <!-- URL Parameters -->
+            <div class="test-row">
+                <div class="test-input-group">
+                    <label>{% trans "URL Parameters" %}</label>
+                    <div class="url-parameters-list">
+                        {% for param in url_parameters %}
+                            <div class="url-param-item">
+                                <label for="param-{{ param.name }}">{{ param.name }} <small>({{ param.type }})</small></label>
+                                <input type="text" id="param-{{ param.name }}" class="url-param-input" data-param-name="{{ param.name }}" placeholder="{% trans 'Enter value...' %}">
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Authentication -->
+            <div class="test-row">
+                <div class="test-input-group auth-group">
+                    <label for="auth-type">{% trans "Authentication" %}</label>
+                    <div class="auth-inputs">
+                        <select id="auth-type" class="auth-type-select">
+                            <option value="session" selected>{% trans "Current Session" %}</option>
+                            <option value="">{% trans "None" %}</option>
+                            <option value="session_cookie">{% trans "Session Cookie" %}</option>
+                            <option value="bearer">{% trans "Bearer Token" %}</option>
+                            <option value="token">{% trans "Token (DRF)" %}</option>
+                            <option value="basic">{% trans "Basic Auth" %}</option>
+                        </select>
+                        <input type="text" id="auth-value" class="auth-value-input" placeholder="{% trans 'Token or username:password...' %}" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Headers -->
+            <div class="test-row">
+                <div class="test-input-group">
+                    <label>{% trans "Headers" %}</label>
+                    <div class="headers-container" id="headers-container">
+                        <div class="header-row">
+                            <input type="text" class="header-key" placeholder="{% trans 'Header name' %}">
+                            <input type="text" class="header-value" placeholder="{% trans 'Header value' %}">
+                            <button type="button" class="remove-header-btn" onclick="removeHeader(this)">×</button>
+                        </div>
+                    </div>
+                    <button type="button" class="add-header-btn" onclick="addHeader()">+ {% trans "Add Header" %}</button>
+                </div>
+            </div>
+
+            <!-- Request Body -->
+            <div class="test-row body-row" id="body-row">
+                <div class="test-input-group">
+                    <label for="request-body">{% trans "Request Body" %}</label>
+                    <textarea id="request-body" class="request-body-textarea" placeholder='{% trans "Enter JSON body..." %}'></textarea>
+                    <div class="body-actions">
+                        <button type="button" class="format-json-btn" onclick="formatJson()">{% trans "Format JSON" %}</button>
+                        {% if serializer_info %}
+                        <button type="button" class="generate-sample-btn" onclick="generateSampleBody()">{% trans "Generate Sample" %}</button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- cURL Command Display -->
+            <div class="test-row">
+                <div class="test-input-group">
+                    <label>
+                        {% trans "cURL Command" %}
+                        <span class="curl-copy-icon" id="curl-copy-icon" onclick="copyCurlCommand()" title="{% trans 'Copy to clipboard' %}">📋</span>
+                        <span class="curl-copy-feedback" id="curl-copy-feedback"></span>
+                    </label>
+                    <div class="curl-display">
+                        <pre id="curl-command" class="curl-command"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="test-row">
+                <button type="button" id="send-request-btn" class="send-request-btn" onclick="sendRequest()">{% trans "Send Request" %}</button>
+                <div id="param-warning" class="param-warning" style="display: none; margin-top: 10px; color: #ba2121; font-size: 12px;">
+                    {% trans "Please fill in all URL parameters before sending the request." %}
+                </div>
+            </div>
+
+            <!-- Response Display -->
+            <div class="test-row response-row" id="response-row" style="display: none;">
+                <div class="test-input-group">
+                    <label>{% trans "Response" %}</label>
+                    <div class="response-container">
+                        <div class="response-meta">
+                            <span class="response-status" id="response-status"></span>
+                            <span class="response-time" id="response-time"></span>
+                        </div>
+                        <div class="response-tabs">
+                            <button type="button" class="response-tab active" onclick="showResponseTab('body', event)">{% trans "Body" %}</button>
+                            <button type="button" class="response-tab" onclick="showResponseTab('headers', event)">{% trans "Headers" %}</button>
+                        </div>
+                        <div class="response-body-container" id="response-body-container">
+                            <pre id="response-body" class="response-body"></pre>
+                        </div>
+                        <div class="response-headers-container" id="response-headers-container" style="display: none;">
+                            <pre id="response-headers" class="response-headers"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

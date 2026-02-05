@@ -1,0 +1,67 @@
+{% load i18n %}
+
+<!-- URL Detail Card -->
+<div class="module">
+    <h2>{% trans "URL Pattern" %}</h2>
+    <div class="url-detail-content">
+        <div class="detail-section">
+            <div class="detail-row">
+                <div class="detail-label">{% trans "Pattern" %}</div>
+                <div class="detail-value">
+                    <code class="detail-code">{{ url.pattern }}</code>
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <div class="detail-label">{% trans "Name" %}</div>
+                <div class="detail-value">
+                    {% if url.name %}
+                        <span class="key-type-badge key-type-string">{{ url.name }}</span>
+                    {% else %}
+                        <span style="color: #999; font-style: italic;">{% trans "unnamed" %}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <div class="detail-label">{% trans "View Function" %}</div>
+                <div class="detail-value">
+                    <code class="detail-code">{{ url.view }}</code>
+                </div>
+            </div>
+
+            {% if url.view_class %}
+            <div class="detail-row">
+                <div class="detail-label">{% trans "View Class" %}</div>
+                <div class="detail-value">
+                    <code class="detail-code">{{ url.view_class }}</code>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="detail-row">
+                <div class="detail-label">{% trans "Namespace" %}</div>
+                <div class="detail-value">
+                    {% if url.namespace %}
+                        <a href="{% url 'dj_urls_panel:index' %}?namespace={{ url.namespace }}" class="namespace-link">
+                            <span class="key-type-badge key-type-hash">{{ url.namespace }}</span>
+                        </a>
+                    {% else %}
+                        <span style="color: #999;">{% trans "None" %}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <div class="detail-label">{% trans "HTTP Methods" %}</div>
+                <div class="detail-value">
+                    <div class="http-methods-list">
+                        {% for method in http_methods %}
+                            <span class="http-method-badge http-method-{{ method|lower }}">{{ method }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

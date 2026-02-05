@@ -12,10 +12,8 @@ router.register(r"users", views.UserViewSet, basename="user")
 app_name = "api"
 
 urlpatterns = [
-    # API Root
-    path("", views.api_root, name="root"),
     # Router URLs (includes all ViewSet endpoints)
-    path("", include(router.urls)),
+    path("router/", include(router.urls)),
     # Generic API Views
     path(
         "generic/articles/",
