@@ -43,7 +43,30 @@ urlpatterns = [
 python manage.py migrate
 ```
 
-## 5. Access the Panel
+## 5. Configure Settings (Optional)
+
+For basic usage, no configuration is needed. For advanced features and security options:
+
+```python
+# settings.py
+DJ_URLS_PANEL_SETTINGS = {
+    # Exclude specific URL patterns
+    'EXCLUDE_URLS': [
+        r'^admin/',      # Exclude admin URLs
+        r'^__debug__/',  # Exclude debug toolbar
+    ],
+    
+    # Enable/disable URL testing interface
+    'ENABLE_TESTING': True,  # Set to False in production
+    
+    # Whitelist hosts for URL testing (SSRF protection)
+    'ALLOWED_HOSTS': None,  # or ['yourdomain.com']
+}
+```
+
+See [Configuration](configuration.md) for detailed options.
+
+## 6. Access the Panel
 
 1. Start your Django development server:
    ```bash
@@ -54,4 +77,4 @@ python manage.py migrate
 
 3. Look for the "DJ URLS PANEL" section
 
-That's it!
+That's it! You can now browse and test your URLs directly from the admin interface.
