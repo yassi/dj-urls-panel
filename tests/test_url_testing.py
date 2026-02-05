@@ -268,22 +268,85 @@ class TestUrlDetailView(CeleryPanelTestCase):
 
     def test_url_detail_includes_http_methods(self):
         """Test that url_detail includes HTTP methods in context."""
-        # Use a known URL pattern from the project
-        url = reverse("dj_urls_panel:url_detail", kwargs={"pattern": "/admin/"})
-        response = self.client.get(url)
-        
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("http_methods", response.context)
-        self.assertIn("test_url", response.context)
-        self.assertIn("base_url", response.context)
+        # Override DJ_URLS_PANEL_SETTINGS to not exclude URLs for this test
+        with self.settings(DJ_URLS_PANEL_SETTINGS={}):
+            # Use a known URL pattern from the project
+            url = reverse("dj_urls_panel:url_detail", kwargs={"pattern": "/admin/"})
+            response = self.client.get(url)
+            
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("http_methods", response.context)
+            self.assertIn("test_url", response.context)
+            self.assertIn("base_url", response.context)
 
     def test_url_detail_includes_url_parameters(self):
         """Test that url_detail includes URL parameters in context."""
-        url = reverse("dj_urls_panel:url_detail", kwargs={"pattern": "/admin/"})
-        response = self.client.get(url)
+        # Override DJ_URLS_PANEL_SETTINGS to not exclude URLs for this test
+        with self.settings(DJ_URLS_PANEL_SETTINGS={}):
+            url = reverse("dj_urls_panel:url_detail", kwargs={"pattern": "/admin/"})
+            response = self.client.get(url)
+            
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("url_parameters", response.context)
+
+
+class TestExcludeUrls(CeleryPanelTestCase):
+    """Test cases for EXCLUDE_URLS setting."""
+
+    def test_exclude_urls_filters_patterns(self):
+        """Test that EXCLUDE_URLS setting filters out matching URL patterns."""
+        from dj_urls_panel.utils import UrlListInterface
         
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("url_parameters", response.context)
+        # Test with exclusion settings
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'EXCLUDE_URLS': [r'^admin/']}):
+            interface = UrlListInterface()
+            urls = interface.get_url_list()
+            
+            # Admin URLs should be excluded
+            admin_urls = [url for url in urls if url['pattern'].startswith('/admin/')]
+            self.assertEqual(len(admin_urls), 0, "Admin URLs should be excluded")
+    
+    def test_exclude_urls_keeps_non_matching_patterns(self):
+        """Test that EXCLUDE_URLS doesn't filter non-matching patterns."""
+        from dj_urls_panel.utils import UrlListInterface
+        
+        # Test with exclusion settings
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'EXCLUDE_URLS': [r'^admin/']}):
+            interface = UrlListInterface()
+            urls = interface.get_url_list()
+            
+            # API URLs should still be present
+            api_urls = [url for url in urls if url['pattern'].startswith('/api/')]
+            self.assertGreater(len(api_urls), 0, "API URLs should not be excluded")
+    
+    def test_no_exclusion_when_setting_absent(self):
+        """Test that URLs are not filtered when DJ_URLS_PANEL_SETTINGS is absent."""
+        from dj_urls_panel.utils import UrlListInterface
+        
+        # Test without exclusion settings
+        with self.settings(DJ_URLS_PANEL_SETTINGS={}):
+            interface = UrlListInterface()
+            urls = interface.get_url_list()
+            
+            # Admin URLs should be present
+            admin_urls = [url for url in urls if url['pattern'].startswith('/admin/')]
+            self.assertGreater(len(admin_urls), 0, "Admin URLs should be present when not excluded")
+    
+    def test_multiple_exclusion_patterns(self):
+        """Test multiple exclusion patterns."""
+        from dj_urls_panel.utils import UrlListInterface
+        
+        # Test with multiple exclusion patterns
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'EXCLUDE_URLS': [r'^admin/', r'^api/']}):
+            interface = UrlListInterface()
+            urls = interface.get_url_list()
+            
+            # Both admin and API URLs should be excluded
+            admin_urls = [url for url in urls if url['pattern'].startswith('/admin/')]
+            api_urls = [url for url in urls if url['pattern'].startswith('/api/')]
+            
+            self.assertEqual(len(admin_urls), 0, "Admin URLs should be excluded")
+            self.assertEqual(len(api_urls), 0, "API URLs should be excluded")
 
 
 class TestDrfSerializerInfo(CeleryPanelTestCase):

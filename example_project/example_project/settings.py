@@ -147,6 +147,12 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 10,
 }
 
+DJ_URLS_PANEL_SETTINGS = {
+    "EXCLUDE_URLS": [
+        r"^admin/",  # Regex pattern to exclude URLs starting with "admin/"
+    ],
+}
+
 
 # Simple Console Logging Configuration
 LOGGING = {

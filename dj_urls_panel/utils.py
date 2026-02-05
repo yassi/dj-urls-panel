@@ -223,6 +223,7 @@ class UrlListInterface:
         self.urlconf = urlconf or settings.ROOT_URLCONF
         self.resolver = get_resolver(self.urlconf)
         self._url_patterns = []
+        self._load_settings()
 
     def get_url_list(self):
         """
@@ -245,7 +246,66 @@ class UrlListInterface:
             self._url_patterns = self._extract_patterns(
                 self.resolver.url_patterns, namespace="", prefix=""
             )
-        return self._url_patterns
+        
+        # Apply URL exclusion filters from settings
+        return self._filter_excluded_urls(self._url_patterns)
+
+    def _load_settings(self):
+        """
+        Load DJ_URLS_PANEL_SETTINGS from Django settings.
+        
+        Sets default values if setting is not configured.
+        """
+        import re
+        
+        panel_settings = getattr(settings, 'DJ_URLS_PANEL_SETTINGS', {})
+        
+        # Get EXCLUDE_URLS patterns (can be strings or compiled regex patterns)
+        exclude_patterns = panel_settings.get('EXCLUDE_URLS', [])
+        
+        # Compile regex patterns
+        self.exclude_patterns = []
+        for pattern in exclude_patterns:
+            if isinstance(pattern, str):
+                try:
+                    self.exclude_patterns.append(re.compile(pattern))
+                except re.error:
+                    # Skip invalid regex patterns
+                    pass
+            elif hasattr(pattern, 'match'):
+                # Already a compiled regex
+                self.exclude_patterns.append(pattern)
+
+    def _filter_excluded_urls(self, url_patterns):
+        """
+        Filter out URLs that match exclusion patterns.
+        
+        Args:
+            url_patterns: List of URL pattern dictionaries
+            
+        Returns:
+            Filtered list of URL patterns
+        """
+        if not self.exclude_patterns:
+            return url_patterns
+        
+        filtered = []
+        for url in url_patterns:
+            pattern = url['pattern']
+            # Remove leading slash for matching
+            pattern_to_match = pattern.lstrip('/')
+            
+            # Check if pattern matches any exclusion pattern
+            excluded = False
+            for exclude_pattern in self.exclude_patterns:
+                if exclude_pattern.match(pattern_to_match):
+                    excluded = True
+                    break
+            
+            if not excluded:
+                filtered.append(url)
+        
+        return filtered
 
     def _extract_patterns(self, patterns, namespace="", prefix=""):
         """
