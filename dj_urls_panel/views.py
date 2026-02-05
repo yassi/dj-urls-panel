@@ -170,14 +170,50 @@ def execute_request(request):
             if session_id:
                 cookies[session_cookie_name] = session_id
 
-            # Add CSRF token for write operations
+            # Forward CSRF cookie and add CSRF token for write operations
+            csrf_cookie_name = settings.CSRF_COOKIE_NAME
+            csrf_cookie_value = request.COOKIES.get(csrf_cookie_name)
+            
             if method in ["POST", "PUT", "PATCH", "DELETE"]:
+                # Get CSRF token from request
                 csrf_token = request.META.get("CSRF_COOKIE")
                 if not csrf_token:
-                    # Try to get it from cookies
-                    csrf_token = request.COOKIES.get(settings.CSRF_COOKIE_NAME)
+                    csrf_token = csrf_cookie_value
+                
                 if csrf_token:
                     headers["X-CSRFToken"] = csrf_token
+                    # Also forward the CSRF cookie itself
+                    if csrf_cookie_value:
+                        cookies[csrf_cookie_name] = csrf_cookie_value
+                else:
+                    # Try to obtain CSRF token by making a GET request first
+                    try:
+                        # Extract base URL for CSRF token fetch
+                        from urllib.parse import urlparse
+                        parsed_url = urlparse(url)
+                        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+                        
+                        # Make a GET request to get CSRF token
+                        csrf_response = http_requests.get(
+                            base_url,
+                            cookies=cookies,
+                            timeout=5,
+                            allow_redirects=True
+                        )
+                        
+                        # Extract CSRF token from response cookies
+                        if csrf_cookie_name in csrf_response.cookies:
+                            csrf_token = csrf_response.cookies[csrf_cookie_name]
+                            cookies[csrf_cookie_name] = csrf_token
+                            headers["X-CSRFToken"] = csrf_token
+                    except Exception:
+                        # If CSRF fetch fails, continue without it
+                        pass
+            else:
+                # For read operations, still forward CSRF cookie if present
+                if csrf_cookie_value:
+                    cookies[csrf_cookie_name] = csrf_cookie_value
+                    
         elif auth_type == "session_cookie" and auth_value:
             # Use the provided session ID
             from django.conf import settings
@@ -185,13 +221,43 @@ def execute_request(request):
             session_cookie_name = settings.SESSION_COOKIE_NAME
             cookies[session_cookie_name] = auth_value
 
-            # Add CSRF token for write operations if available
+            # Forward CSRF cookie and add CSRF token for write operations
+            csrf_cookie_name = settings.CSRF_COOKIE_NAME
+            csrf_cookie_value = request.COOKIES.get(csrf_cookie_name)
+            
             if method in ["POST", "PUT", "PATCH", "DELETE"]:
                 csrf_token = request.META.get("CSRF_COOKIE")
                 if not csrf_token:
-                    csrf_token = request.COOKIES.get(settings.CSRF_COOKIE_NAME)
+                    csrf_token = csrf_cookie_value
+                
                 if csrf_token:
                     headers["X-CSRFToken"] = csrf_token
+                    if csrf_cookie_value:
+                        cookies[csrf_cookie_name] = csrf_cookie_value
+                else:
+                    # Try to obtain CSRF token by making a GET request first
+                    try:
+                        from urllib.parse import urlparse
+                        parsed_url = urlparse(url)
+                        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+                        
+                        csrf_response = http_requests.get(
+                            base_url,
+                            cookies=cookies,
+                            timeout=5,
+                            allow_redirects=True
+                        )
+                        
+                        if csrf_cookie_name in csrf_response.cookies:
+                            csrf_token = csrf_response.cookies[csrf_cookie_name]
+                            cookies[csrf_cookie_name] = csrf_token
+                            headers["X-CSRFToken"] = csrf_token
+                    except Exception:
+                        pass
+            else:
+                # For read operations, still forward CSRF cookie if present
+                if csrf_cookie_value:
+                    cookies[csrf_cookie_name] = csrf_cookie_value
         elif auth_type and auth_value:
             if auth_type == "basic":
                 # Expect auth_value as "username:password"
