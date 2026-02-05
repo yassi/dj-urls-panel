@@ -11,6 +11,8 @@
 
 Visualize Django URL routing inside the Django Admin, including patterns, views, namespaces, etc
 
+![DJ Urls Panel](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/dj-urls-panel.png)
+
 
 ## Docs
 
