@@ -116,8 +116,8 @@
                             <span class="response-time" id="response-time"></span>
                         </div>
                         <div class="response-tabs">
-                            <button type="button" class="response-tab active" onclick="showResponseTab('body')">{% trans "Body" %}</button>
-                            <button type="button" class="response-tab" onclick="showResponseTab('headers')">{% trans "Headers" %}</button>
+                            <button type="button" class="response-tab active" onclick="showResponseTab('body', event)">{% trans "Body" %}</button>
+                            <button type="button" class="response-tab" onclick="showResponseTab('headers', event)">{% trans "Headers" %}</button>
                         </div>
                         <div class="response-body-container" id="response-body-container">
                             <pre id="response-body" class="response-body"></pre>
