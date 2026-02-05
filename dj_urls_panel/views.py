@@ -101,7 +101,7 @@ def url_detail(request, pattern):
         short_name = url["name"].split(":")[-1]
 
     # Build the base URL for testing
-    base_url = request.build_absolute_uri('/').rstrip('/')
+    base_url = request.build_absolute_uri("/").rstrip("/")
     test_url = base_url + url["pattern"]
 
     context = admin.site.each_context(request)
@@ -116,7 +116,9 @@ def url_detail(request, pattern):
             "url_parameters": url.get("url_parameters", []),
             "serializer_info": url.get("serializer_info"),
             "serializer_fields_json": json.dumps(
-                url.get("serializer_info", {}).get("fields", []) if url.get("serializer_info") else []
+                url.get("serializer_info", {}).get("fields", [])
+                if url.get("serializer_info")
+                else []
             ),
         }
     )
@@ -133,13 +135,16 @@ def execute_request(request):
     try:
         import requests as http_requests
     except ImportError:
-        return JsonResponse({
-            "error": "The 'requests' library is required for URL testing. Install it with: pip install requests"
-        }, status=500)
-    
+        return JsonResponse(
+            {
+                "error": "The 'requests' library is required for URL testing. Install it with: pip install requests"
+            },
+            status=500,
+        )
+
     try:
         data = json.loads(request.body)
-        
+
         url = data.get("url", "")
         method = data.get("method", "GET").upper()
         headers = data.get("headers", {})
@@ -147,14 +152,47 @@ def execute_request(request):
         auth_type = data.get("auth_type")
         auth_value = data.get("auth_value")
         timeout = data.get("timeout", 30)
-        
+
         # Validate URL
         if not url:
             return JsonResponse({"error": "URL is required"}, status=400)
-        
-        # Build authentication
+
+        # Build authentication and cookies
         auth = None
-        if auth_type and auth_value:
+        cookies = {}
+
+        if auth_type == "session":
+            # Forward the current user's session cookie
+            from django.conf import settings
+
+            session_cookie_name = settings.SESSION_COOKIE_NAME
+            session_id = request.COOKIES.get(session_cookie_name)
+            if session_id:
+                cookies[session_cookie_name] = session_id
+
+            # Add CSRF token for write operations
+            if method in ["POST", "PUT", "PATCH", "DELETE"]:
+                csrf_token = request.META.get("CSRF_COOKIE")
+                if not csrf_token:
+                    # Try to get it from cookies
+                    csrf_token = request.COOKIES.get(settings.CSRF_COOKIE_NAME)
+                if csrf_token:
+                    headers["X-CSRFToken"] = csrf_token
+        elif auth_type == "session_cookie" and auth_value:
+            # Use the provided session ID
+            from django.conf import settings
+
+            session_cookie_name = settings.SESSION_COOKIE_NAME
+            cookies[session_cookie_name] = auth_value
+
+            # Add CSRF token for write operations if available
+            if method in ["POST", "PUT", "PATCH", "DELETE"]:
+                csrf_token = request.META.get("CSRF_COOKIE")
+                if not csrf_token:
+                    csrf_token = request.COOKIES.get(settings.CSRF_COOKIE_NAME)
+                if csrf_token:
+                    headers["X-CSRFToken"] = csrf_token
+        elif auth_type and auth_value:
             if auth_type == "basic":
                 # Expect auth_value as "username:password"
                 if ":" in auth_value:
@@ -164,7 +202,7 @@ def execute_request(request):
                 headers["Authorization"] = f"Bearer {auth_value}"
             elif auth_type == "token":
                 headers["Authorization"] = f"Token {auth_value}"
-        
+
         # Prepare request kwargs
         request_kwargs = {
             "method": method,
@@ -173,7 +211,11 @@ def execute_request(request):
             "timeout": timeout,
             "allow_redirects": True,
         }
-        
+
+        # Add cookies if any
+        if cookies:
+            request_kwargs["cookies"] = cookies
+
         # Add body for appropriate methods
         if body and method in ["POST", "PUT", "PATCH"]:
             # Try to parse as JSON
@@ -184,13 +226,13 @@ def execute_request(request):
                     headers["Content-Type"] = "application/json"
             except json.JSONDecodeError:
                 request_kwargs["data"] = body
-        
+
         if auth:
             request_kwargs["auth"] = auth
-        
+
         # Execute the request
         response = http_requests.request(**request_kwargs)
-        
+
         # Try to parse response as JSON
         try:
             response_body = response.json()
@@ -198,20 +240,22 @@ def execute_request(request):
         except (json.JSONDecodeError, ValueError):
             response_body = response.text
             is_json = False
-        
+
         # Build response headers dict
         response_headers = dict(response.headers)
-        
-        return JsonResponse({
-            "status_code": response.status_code,
-            "status_text": response.reason,
-            "headers": response_headers,
-            "body": response_body,
-            "is_json": is_json,
-            "elapsed_ms": int(response.elapsed.total_seconds() * 1000),
-            "url": response.url,  # Final URL after redirects
-        })
-        
+
+        return JsonResponse(
+            {
+                "status_code": response.status_code,
+                "status_text": response.reason,
+                "headers": response_headers,
+                "body": response_body,
+                "is_json": is_json,
+                "elapsed_ms": int(response.elapsed.total_seconds() * 1000),
+                "url": response.url,  # Final URL after redirects
+            }
+        )
+
     except http_requests.exceptions.Timeout:
         return JsonResponse({"error": "Request timed out"}, status=408)
     except http_requests.exceptions.ConnectionError as e:

@@ -40,17 +40,23 @@ function updateMethodColor(select) {
 // Toggle auth value input based on auth type
 document.getElementById('auth-type').addEventListener('change', function() {
     const authValueInput = document.getElementById('auth-value');
-    if (this.value) {
+    if (this.value && this.value !== 'session') {
         authValueInput.disabled = false;
         if (this.value === 'basic') {
             authValueInput.placeholder = "{% trans 'username:password' %}";
+        } else if (this.value === 'session_cookie') {
+            authValueInput.placeholder = "{% trans 'Enter session ID...' %}";
         } else {
             authValueInput.placeholder = "{% trans 'Enter token...' %}";
         }
     } else {
         authValueInput.disabled = true;
         authValueInput.value = '';
-        authValueInput.placeholder = "{% trans 'Token or username:password...' %}";
+        if (this.value === 'session') {
+            authValueInput.placeholder = "{% trans 'Using current admin session' %}";
+        } else {
+            authValueInput.placeholder = "{% trans 'Token or username:password...' %}";
+        }
     }
     updateCurlCommand();
 });
@@ -271,7 +277,19 @@ function generateCurlCommand() {
     }
     
     // Add authentication
-    if (data.auth_type && data.auth_value) {
+    if (data.auth_type === 'session') {
+        parts.push('--cookie "sessionid=<your-session-id>"');
+        // Also add CSRF token for write operations
+        if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(data.method)) {
+            parts.push(`-H "X-CSRFToken: ${csrfToken}"`);
+        }
+    } else if (data.auth_type === 'session_cookie' && data.auth_value) {
+        parts.push(`--cookie "sessionid=${data.auth_value}"`);
+        // Also add CSRF token for write operations
+        if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(data.method)) {
+            parts.push(`-H "X-CSRFToken: ${csrfToken}"`);
+        }
+    } else if (data.auth_type && data.auth_value) {
         if (data.auth_type === 'basic') {
             parts.push(`-u "${data.auth_value}"`);
         } else if (data.auth_type === 'bearer') {

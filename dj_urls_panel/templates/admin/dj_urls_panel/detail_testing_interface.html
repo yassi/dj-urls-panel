@@ -43,7 +43,9 @@
                     <label for="auth-type">{% trans "Authentication" %}</label>
                     <div class="auth-inputs">
                         <select id="auth-type" class="auth-type-select">
+                            <option value="session" selected>{% trans "Current Session" %}</option>
                             <option value="">{% trans "None" %}</option>
+                            <option value="session_cookie">{% trans "Session Cookie" %}</option>
                             <option value="bearer">{% trans "Bearer Token" %}</option>
                             <option value="token">{% trans "Token (DRF)" %}</option>
                             <option value="basic">{% trans "Basic Auth" %}</option>
