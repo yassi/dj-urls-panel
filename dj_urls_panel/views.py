@@ -3,10 +3,67 @@ from django.shortcuts import render
 from django.contrib import admin
 from django.http import Http404, JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.conf import settings
 import json
 import urllib.parse
+import re
 
 from .utils import UrlListInterface
+
+
+def _is_url_allowed(url):
+    """
+    Validate if a URL is allowed for testing based on DJ_URLS_PANEL_SETTINGS.
+    
+    Blocks dangerous internal targets by default (cloud metadata, private IPs, localhost).
+    Allows only hosts specified in ALLOWED_HOSTS if configured.
+    
+    Args:
+        url: The URL string to validate
+        
+    Returns:
+        tuple: (is_allowed: bool, error_message: str or None)
+    """
+    from urllib.parse import urlparse
+    
+    panel_settings = getattr(settings, 'DJ_URLS_PANEL_SETTINGS', {})
+    allowed_hosts = panel_settings.get('ALLOWED_HOSTS', None)
+    
+    try:
+        parsed = urlparse(url)
+        hostname = parsed.hostname
+        
+        if not hostname:
+            return False, "Invalid URL: No hostname found"
+        
+        # If ALLOWED_HOSTS is configured, only allow those hosts
+        if allowed_hosts is not None:
+            if hostname not in allowed_hosts:
+                return False, f"Host '{hostname}' is not in ALLOWED_HOSTS"
+            return True, None
+        
+        # Default blocklist for SSRF protection
+        # Block localhost and private IP ranges
+        blocked_patterns = [
+            r'^localhost$',
+            r'^127\.',  # Loopback
+            r'^10\.',   # Private class A
+            r'^172\.(1[6-9]|2[0-9]|3[01])\.',  # Private class B
+            r'^192\.168\.',  # Private class C
+            r'^169\.254\.',  # Link-local (includes cloud metadata)
+            r'^::1$',  # IPv6 localhost
+            r'^fe80:',  # IPv6 link-local
+            r'^fc00:',  # IPv6 private
+        ]
+        
+        for pattern in blocked_patterns:
+            if re.match(pattern, hostname, re.IGNORECASE):
+                return False, f"Host '{hostname}' is blocked for security reasons (internal/private IP)"
+        
+        return True, None
+        
+    except Exception as e:
+        return False, f"Invalid URL: {str(e)}"
 
 
 @staff_member_required
@@ -103,6 +160,10 @@ def url_detail(request, pattern):
     # Build the base URL for testing
     base_url = request.build_absolute_uri("/").rstrip("/")
     test_url = base_url + url["pattern"]
+    
+    # Check if testing is enabled
+    panel_settings = getattr(settings, 'DJ_URLS_PANEL_SETTINGS', {})
+    enable_testing = panel_settings.get('ENABLE_TESTING', True)
 
     context = admin.site.each_context(request)
     context.update(
@@ -120,6 +181,7 @@ def url_detail(request, pattern):
                 if url.get("serializer_info")
                 else []
             ),
+            "enable_testing": enable_testing,
         }
     )
     return render(request, "admin/dj_urls_panel/detail.html", context)
@@ -132,6 +194,20 @@ def execute_request(request):
     Execute an HTTP request and return the response.
     This is a proxy endpoint for testing URLs.
     """
+    from django.conf import settings as django_settings
+    
+    # Check if testing is enabled FIRST (before any other checks)
+    panel_settings = getattr(django_settings, 'DJ_URLS_PANEL_SETTINGS', {})
+    enable_testing = panel_settings.get('ENABLE_TESTING', True)
+    
+    if not enable_testing:
+        return JsonResponse(
+            {
+                "error": "URL testing is disabled. Set ENABLE_TESTING=True in DJ_URLS_PANEL_SETTINGS to enable it."
+            },
+            status=403,
+        )
+    
     try:
         import requests as http_requests
     except ImportError:
@@ -156,6 +232,11 @@ def execute_request(request):
         # Validate URL
         if not url:
             return JsonResponse({"error": "URL is required"}, status=400)
+        
+        # Validate URL against allowed hosts / SSRF protection
+        is_allowed, error_message = _is_url_allowed(url)
+        if not is_allowed:
+            return JsonResponse({"error": error_message}, status=403)
 
         # Build authentication and cookies
         auth = None
@@ -163,15 +244,13 @@ def execute_request(request):
 
         if auth_type == "session":
             # Forward the current user's session cookie
-            from django.conf import settings
-
-            session_cookie_name = settings.SESSION_COOKIE_NAME
+            session_cookie_name = django_settings.SESSION_COOKIE_NAME
             session_id = request.COOKIES.get(session_cookie_name)
             if session_id:
                 cookies[session_cookie_name] = session_id
 
             # Forward CSRF cookie and add CSRF token for write operations
-            csrf_cookie_name = settings.CSRF_COOKIE_NAME
+            csrf_cookie_name = django_settings.CSRF_COOKIE_NAME
             csrf_cookie_value = request.COOKIES.get(csrf_cookie_name)
             
             if method in ["POST", "PUT", "PATCH", "DELETE"]:
@@ -216,13 +295,11 @@ def execute_request(request):
                     
         elif auth_type == "session_cookie" and auth_value:
             # Use the provided session ID
-            from django.conf import settings
-
-            session_cookie_name = settings.SESSION_COOKIE_NAME
+            session_cookie_name = django_settings.SESSION_COOKIE_NAME
             cookies[session_cookie_name] = auth_value
 
             # Forward CSRF cookie and add CSRF token for write operations
-            csrf_cookie_name = settings.CSRF_COOKIE_NAME
+            csrf_cookie_name = django_settings.CSRF_COOKIE_NAME
             csrf_cookie_value = request.COOKIES.get(csrf_cookie_name)
             
             if method in ["POST", "PUT", "PATCH", "DELETE"]:

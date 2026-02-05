@@ -276,6 +276,12 @@ class UrlListInterface:
         # Get URL_CONFIG setting for custom URLconf
         self.url_config = panel_settings.get('URL_CONFIG', None)
         
+        # Get ENABLE_TESTING setting (defaults to True for backward compatibility)
+        self.enable_testing = panel_settings.get('ENABLE_TESTING', True)
+        
+        # Get ALLOWED_HOSTS setting for URL validation (None means allow all)
+        self.allowed_hosts = panel_settings.get('ALLOWED_HOSTS', None)
+        
         # Get EXCLUDE_URLS patterns (can be strings or compiled regex patterns)
         exclude_patterns = panel_settings.get('EXCLUDE_URLS', [])
         

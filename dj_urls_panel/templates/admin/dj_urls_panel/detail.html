@@ -17,12 +17,23 @@
     {% include "admin/dj_urls_panel/detail_serializer_info.html" %}
 
     <!-- URL Testing Interface -->
-    {% include "admin/dj_urls_panel/detail_testing_interface.html" %}
+    {% if enable_testing %}
+        {% include "admin/dj_urls_panel/detail_testing_interface.html" %}
+    {% else %}
+        <div class="module" style="margin-top: 20px;">
+            <div style="padding: 20px; text-align: center; color: #666;">
+                <p><strong>{% trans "URL Testing Interface is Disabled" %}</strong></p>
+                <p>{% trans "To enable URL testing, set" %} <code>ENABLE_TESTING=True</code> {% trans "in" %} <code>DJ_URLS_PANEL_SETTINGS</code>.</p>
+            </div>
+        </div>
+    {% endif %}
 
     <!-- URL Reversal Examples -->
     {% include "admin/dj_urls_panel/detail_usage_examples.html" %}
 </div>
 
 <!-- Testing Interface JavaScript -->
-{% include "admin/dj_urls_panel/detail_testing_scripts.html" %}
+{% if enable_testing %}
+    {% include "admin/dj_urls_panel/detail_testing_scripts.html" %}
+{% endif %}
 {% endblock %}

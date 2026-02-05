@@ -17,6 +17,7 @@ from dj_urls_panel.utils import (
     extract_url_parameters,
     get_view_http_methods,
     get_drf_serializer_info,
+    UrlListInterface,
 )
 
 from .base import CeleryPanelTestCase
@@ -198,29 +199,27 @@ class TestExecuteRequestView(CeleryPanelTestCase):
         mock_response.headers = {"Content-Type": "application/json"}
         mock_response.json.return_value = {"success": True}
         mock_response.elapsed.total_seconds.return_value = 0.150
-        mock_response.url = "http://localhost:8000/api/test/"
-        
-        # Patch the requests module that gets imported inside the view
-        with patch.dict('sys.modules', {'requests': MagicMock()}) as mock_modules:
-            mock_requests = mock_modules['requests']
-            mock_requests.request.return_value = mock_response
-            mock_requests.exceptions = MagicMock()
-            mock_requests.exceptions.Timeout = Exception
-            mock_requests.exceptions.ConnectionError = Exception
-            mock_requests.exceptions.RequestException = Exception
+        mock_response.url = "http://example.com/api/test/"
+
+        # Allow example.com in ALLOWED_HOSTS to bypass SSRF protection
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            # Import requests module here
+            import requests
             
-            url = reverse("dj_urls_panel:execute_request")
-            
-            response = self.client.post(
-                url,
-                data=json.dumps({
-                    "url": "http://localhost:8000/api/test/",
-                    "method": "GET",
-                }),
-                content_type="application/json",
-            )
-            
-            self.assertEqual(response.status_code, 200)
+            # Patch requests.request method
+            with patch.object(requests, 'request', return_value=mock_response):
+                url = reverse("dj_urls_panel:execute_request")
+
+                response = self.client.post(
+                    url,
+                    data=json.dumps({
+                        "url": "http://example.com/api/test/",
+                        "method": "GET",
+                    }),
+                    content_type="application/json",
+                )
+
+                self.assertEqual(response.status_code, 200)
             data = response.json()
             self.assertEqual(data["status_code"], 200)
             self.assertEqual(data["status_text"], "OK")
@@ -379,6 +378,156 @@ class TestUrlConfig(CeleryPanelTestCase):
         with self.settings(DJ_URLS_PANEL_SETTINGS={'URL_CONFIG': 'example_project.urls'}):
             interface = UrlListInterface(urlconf='some.other.urls')
             self.assertEqual(interface.urlconf, 'some.other.urls')
+
+
+class TestEnableTesting(CeleryPanelTestCase):
+    """Test cases for ENABLE_TESTING setting."""
+
+    def test_testing_disabled_rejects_requests(self):
+        """Test that execute_request returns 403 when testing is disabled."""
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ENABLE_TESTING': False}):
+            url = reverse("dj_urls_panel:execute_request")
+            data = {
+                "url": "http://example.com/api/test/",
+                "method": "GET",
+            }
+
+            response = self.client.post(
+                url, data=json.dumps(data), content_type="application/json"
+            )
+
+            self.assertEqual(response.status_code, 403)
+            result = response.json()
+            self.assertIn("error", result)
+            self.assertIn("disabled", result["error"].lower())
+
+    def test_testing_enabled_allows_requests(self):
+        """Test that execute_request works when testing is enabled."""
+        # Use example.com which is allowed by ALLOWED_HOSTS
+        test_url = "http://example.com/api/test/"
+        
+        # Mock the requests.request function to return a success response
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.reason = "OK"
+        mock_response.headers = {"Content-Type": "application/json"}
+        mock_response.json.return_value = {"success": True}
+        mock_response.elapsed.total_seconds.return_value = 0.1
+        mock_response.text = '{"success": true}'
+        mock_response.url = test_url
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ENABLE_TESTING': True, 'ALLOWED_HOSTS': ['example.com']}):
+            # Import here to ensure patching works
+            import requests
+            
+            # Patch requests.request at the point of use
+            with patch.object(requests, 'request', return_value=mock_response):
+                url = reverse("dj_urls_panel:execute_request")
+                data = {
+                    "url": test_url,
+                    "method": "GET",
+                }
+
+                response = self.client.post(
+                    url, data=json.dumps(data), content_type="application/json"
+                )
+
+                if response.status_code != 200:
+                    # Print error for debugging
+                    print(f"Error response: {response.json()}")
+                
+                self.assertEqual(response.status_code, 200)
+                result = response.json()
+                self.assertEqual(result["status_code"], 200)
+
+    def test_detail_view_hides_interface_when_disabled(self):
+        """Test that url_detail doesn't show testing interface when disabled."""
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ENABLE_TESTING': False}):
+            interface = UrlListInterface()
+            urls = interface.get_url_list()
+            
+            if urls:
+                url = reverse("dj_urls_panel:url_detail", kwargs={"pattern": urls[0]['pattern']})
+                response = self.client.get(url)
+                
+                self.assertEqual(response.status_code, 200)
+                self.assertFalse(response.context['enable_testing'])
+
+
+class TestAllowedHosts(CeleryPanelTestCase):
+    """Test cases for ALLOWED_HOSTS setting and SSRF protection."""
+
+    def test_blocks_localhost_by_default(self):
+        """Test that localhost is blocked by default for SSRF protection."""
+        from dj_urls_panel.views import _is_url_allowed
+        
+        with self.settings(DJ_URLS_PANEL_SETTINGS={}):
+            is_allowed, error = _is_url_allowed("http://localhost:8000/api/test/")
+            self.assertFalse(is_allowed)
+            self.assertIn("blocked", error.lower())
+
+    def test_blocks_private_ips_by_default(self):
+        """Test that private IP ranges are blocked by default."""
+        from dj_urls_panel.views import _is_url_allowed
+        
+        test_urls = [
+            "http://127.0.0.1/api/",
+            "http://10.0.0.1/api/",
+            "http://172.16.0.1/api/",
+            "http://192.168.1.1/api/",
+            "http://169.254.169.254/latest/meta-data/",  # Cloud metadata
+        ]
+        
+        with self.settings(DJ_URLS_PANEL_SETTINGS={}):
+            for test_url in test_urls:
+                is_allowed, error = _is_url_allowed(test_url)
+                self.assertFalse(is_allowed, f"Should block {test_url}")
+                self.assertIn("blocked", error.lower())
+
+    def test_allows_external_hosts_by_default(self):
+        """Test that external hosts are allowed by default."""
+        from dj_urls_panel.views import _is_url_allowed
+        
+        with self.settings(DJ_URLS_PANEL_SETTINGS={}):
+            is_allowed, error = _is_url_allowed("http://example.com/api/test/")
+            self.assertTrue(is_allowed)
+            self.assertIsNone(error)
+
+    def test_allowed_hosts_whitelist(self):
+        """Test that ALLOWED_HOSTS setting creates a whitelist."""
+        from dj_urls_panel.views import _is_url_allowed
+        
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com', 'api.example.com']}):
+            # Allowed host
+            is_allowed, error = _is_url_allowed("http://example.com/api/")
+            self.assertTrue(is_allowed)
+            
+            # Another allowed host
+            is_allowed, error = _is_url_allowed("https://api.example.com/v1/")
+            self.assertTrue(is_allowed)
+            
+            # Not in allowed list
+            is_allowed, error = _is_url_allowed("http://other.com/api/")
+            self.assertFalse(is_allowed)
+            self.assertIn("not in ALLOWED_HOSTS", error)
+
+    def test_execute_request_validates_url(self):
+        """Test that execute_request validates URLs."""
+        with self.settings(DJ_URLS_PANEL_SETTINGS={}):
+            url = reverse("dj_urls_panel:execute_request")
+            data = {
+                "url": "http://169.254.169.254/latest/meta-data/",
+                "method": "GET",
+            }
+
+            response = self.client.post(
+                url, data=json.dumps(data), content_type="application/json"
+            )
+
+            self.assertEqual(response.status_code, 403)
+            result = response.json()
+            self.assertIn("error", result)
+            self.assertIn("blocked", result["error"].lower())
 
 
 class TestDrfSerializerInfo(CeleryPanelTestCase):
