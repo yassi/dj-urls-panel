@@ -351,11 +351,18 @@ class UrlListInterface:
                 view_name = f"{module}.{view_name}" if view_name else module
 
             # Check if it's a class-based view
+            # DRF ViewSets may store the class in different attributes
             if hasattr(callback, "view_class"):
                 view_class_obj = callback.view_class
                 view_class = callback.view_class.__name__
                 if hasattr(callback.view_class, "__module__"):
                     view_class = f"{callback.view_class.__module__}.{view_class}"
+            elif hasattr(callback, "cls"):
+                # Some DRF views use 'cls' instead of 'view_class'
+                view_class_obj = callback.cls
+                view_class = callback.cls.__name__
+                if hasattr(callback.cls, "__module__"):
+                    view_class = f"{callback.cls.__module__}.{view_class}"
 
         # Get DRF serializer info
         serializer_info = get_drf_serializer_info(view_class_obj)
