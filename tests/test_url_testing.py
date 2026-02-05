@@ -123,9 +123,67 @@ class TestGetViewHttpMethods(CeleryPanelTestCase):
         callback = MagicMock()
         callback.view_class = mock_view_class
         del callback.http_method_names  # Remove from callback itself
+        del callback.actions  # Ensure no actions attribute
         
         methods = get_view_http_methods(callback)
         self.assertEqual(methods, ["GET", "POST", "DELETE"])
+
+    def test_viewset_with_actions_list(self):
+        """Test extracting methods from a ViewSet list action."""
+        mock_view_class = MagicMock()
+        mock_view_class.http_method_names = ["get", "post", "put", "patch", "delete", "head", "options"]
+        
+        callback = MagicMock()
+        callback.view_class = mock_view_class
+        callback.actions = {"get": "list", "post": "create"}  # List endpoint actions
+        del callback.http_method_names
+        
+        methods = get_view_http_methods(callback)
+        # Should only include GET, POST, HEAD, and OPTIONS (not PUT, PATCH, DELETE)
+        self.assertIn("GET", methods)
+        self.assertIn("POST", methods)
+        self.assertIn("HEAD", methods)
+        self.assertIn("OPTIONS", methods)
+        self.assertNotIn("PUT", methods)
+        self.assertNotIn("PATCH", methods)
+        self.assertNotIn("DELETE", methods)
+
+    def test_viewset_with_actions_detail(self):
+        """Test extracting methods from a ViewSet detail action."""
+        mock_view_class = MagicMock()
+        mock_view_class.http_method_names = ["get", "post", "put", "patch", "delete", "head", "options"]
+        
+        callback = MagicMock()
+        callback.view_class = mock_view_class
+        callback.actions = {"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}
+        del callback.http_method_names
+        
+        methods = get_view_http_methods(callback)
+        # Should include GET, PUT, PATCH, DELETE, HEAD, and OPTIONS (not POST)
+        self.assertIn("GET", methods)
+        self.assertIn("PUT", methods)
+        self.assertIn("PATCH", methods)
+        self.assertIn("DELETE", methods)
+        self.assertIn("HEAD", methods)
+        self.assertIn("OPTIONS", methods)
+        self.assertNotIn("POST", methods)
+
+    def test_readonly_viewset_with_actions(self):
+        """Test extracting methods from a ReadOnlyModelViewSet."""
+        mock_view_class = MagicMock()
+        mock_view_class.http_method_names = ["get", "head", "options"]
+        
+        callback = MagicMock()
+        callback.view_class = mock_view_class
+        callback.actions = {"get": "list"}  # Read-only ViewSet
+        del callback.http_method_names
+        
+        methods = get_view_http_methods(callback)
+        # Should only include GET, HEAD, and OPTIONS
+        self.assertIn("GET", methods)
+        self.assertIn("HEAD", methods)
+        self.assertIn("OPTIONS", methods)
+        self.assertEqual(len(methods), 3)
 
 
 class TestExecuteRequestView(CeleryPanelTestCase):

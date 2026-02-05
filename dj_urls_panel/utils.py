@@ -88,11 +88,47 @@ def get_view_http_methods(callback):
         view_class = getattr(callback, 'view_class', None) or getattr(callback, 'cls', None)
         
         if view_class:
-            # Check for http_method_names attribute
-            if hasattr(view_class, 'http_method_names'):
-                return [m.upper() for m in view_class.http_method_names if m.upper() in methods]
+            # Check if it's a DRF ViewSet with actions (most specific)
+            if hasattr(callback, 'actions') and callback.actions:
+                # Actions is a dict mapping HTTP methods to ViewSet actions
+                # e.g., {'get': 'list', 'post': 'create'} or {'get': 'retrieve', 'put': 'update', ...}
+                actions = callback.actions
+                
+                # Map the actions back to HTTP methods
+                for http_method in actions.keys():
+                    method_upper = http_method.upper()
+                    if method_upper in methods:
+                        allowed_methods.append(method_upper)
+                
+                # Always include HEAD and OPTIONS for DRF views
+                if 'GET' in allowed_methods:
+                    if 'HEAD' not in allowed_methods:
+                        allowed_methods.append('HEAD')
+                if 'OPTIONS' not in allowed_methods:
+                    allowed_methods.append('OPTIONS')
+                
+                return sorted(allowed_methods, key=lambda x: methods.index(x))
             
-            # Check for action methods (DRF ViewSets)
+            # Check if view has http_method_names configured
+            if hasattr(view_class, 'http_method_names'):
+                configured_method_names = [m.lower() for m in view_class.http_method_names]
+                
+                # For each configured method, verify it's actually implemented
+                for method in methods:
+                    method_lower = method.lower()
+                    
+                    # Skip if not in configured methods
+                    if method_lower not in configured_method_names:
+                        continue
+                    
+                    # Check if the method exists on the view class
+                    if hasattr(view_class, method_lower):
+                        allowed_methods.append(method)
+                
+                if allowed_methods:
+                    return allowed_methods
+            
+            # Fallback: Check for any implemented methods
             for method in methods:
                 method_lower = method.lower()
                 if hasattr(view_class, method_lower):
