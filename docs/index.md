@@ -1,6 +1,8 @@
 # Dj Urls Panel
 
-Visualize and test Django URL routing inside the Django Admin, including patterns, views, namespaces, and more.
+  <img src="https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/dj-urls-panel.png" alt="Dj Urls Panel Logo" width="700">
+
+  <strong>Django admin URL introspection. Inspect, search, and understand your project's URL routing—directly from the admin.</strong>
 
 ## Overview
 
@@ -25,9 +27,10 @@ Dj Urls Panel is a Django admin extension that provides a comprehensive interfac
 
 ## Quick Links
 
-- [Installation](installation.md)
-- [Configuration](configuration.md)
-- [Development](development.md)
+- [✨ Features](features.md) - Explore all features with screenshots
+- [📦 Installation](installation.md) - Get started in minutes
+- [⚙️ Configuration](configuration.md) - Customize for your needs
+- [🔧 Development](development.md) - Contribute to the project
 
 ## Requirements
 

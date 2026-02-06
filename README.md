@@ -9,7 +9,7 @@
 
 # Dj Urls Panel
 
-Visualize Django URL routing inside the Django Admin, including patterns, views, namespaces, etc
+Django admin URL introspection. Inspect, search, and understand your project's URL routing—directly from the admin.
 
 ![DJ Urls Panel](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/dj-urls-panel.png)
 

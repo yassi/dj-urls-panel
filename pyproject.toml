@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dj-urls-panel"
 version = "0.2.0"
-description = "Visualize Django URL routing inside the Django Admin, including patterns, views, namespaces, etc"
+description = "Django admin URL introspection. Inspect, search, and understand your project's URL routing—directly from the admin."
 readme = "README.md"
 license = {text = "MIT"}
 authors = [

@@ -1,5 +1,5 @@
 site_name: Dj Urls Panel
-site_description: Visualize Django URL routing inside the Django Admin, including patterns, views, namespaces, etc
+site_description: Django admin URL introspection. Inspect, search, and understand your project's URL routing—directly from the admin.
 site_author: Yasser Toruno
 site_url: https://yassi.github.io/dj-urls-panel/
 
@@ -38,6 +38,7 @@ theme:
 
 nav:
   - Home: index.md
+  - Features: features.md
   - Getting Started:
     - Installation: installation.md
     - Configuration: configuration.md
