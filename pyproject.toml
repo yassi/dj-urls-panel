@@ -69,7 +69,7 @@ include-package-data = true
 exclude = ["tests*", "example_project*"]
 
 [tool.setuptools.package-data]
-"dj_urls_panel" = ["templates/**/*"]
+"dj_urls_panel" = ["templates/**/*", "static/**/*"]
 
 # pytest configuration
 [tool.pytest.ini_options]
