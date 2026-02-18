@@ -39,6 +39,9 @@ dependencies = [
     "requests>=2.28.0",
 ]
 
+[project.entry-points."dj_control_room.panels"]
+dj_urls_panel = "dj_urls_panel.panel:UrlsPanel"
+
 [project.optional-dependencies]
 testing = [
     "requests>=2.28.0",  # For URL testing feature
