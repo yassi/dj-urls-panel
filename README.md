@@ -139,17 +139,23 @@ DJ_URLS_PANEL_SETTINGS = {
         r'^admin/',      # Exclude admin URLs
         r'^__debug__/',  # Exclude debug toolbar
     ],
-    
+
     # Use a custom URLconf instead of ROOT_URLCONF
     'URL_CONFIG': None,  # e.g., 'myproject.api_urls'
-    
+
     # Enable/disable URL testing interface (recommended: False in production)
     'ENABLE_TESTING': True,
-    
+
     # Whitelist hosts for URL testing (SSRF protection)
     # None = default blocklist only (blocks localhost, private IPs)
     # List = only allow specified hosts
     'ALLOWED_HOSTS': None,  # e.g., ['example.com', 'api.example.com']
+
+    # CSS: load built-in styles and/or inject your own
+    'LOAD_DEFAULT_CSS': True,
+    # Static paths are relative to app's static/ dir (e.g. 'myapp/css/overrides.css'
+    # for a file at myapp/static/myapp/css/overrides.css). Full URLs also accepted.
+    'EXTRA_CSS': [],
 }
 ```
 

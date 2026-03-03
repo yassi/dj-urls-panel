@@ -8,6 +8,7 @@ import json
 import urllib.parse
 import re
 
+from .conf import get_css_context
 from .utils import UrlListInterface
 
 
@@ -119,6 +120,7 @@ def index(request):
     has_root_urls = any(not url["namespace"] for url in url_interface.get_url_list())
 
     context = admin.site.each_context(request)
+    context.update(get_css_context())
     context.update(
         {
             "title": "Dj Urls Panel",
@@ -166,6 +168,7 @@ def url_detail(request, pattern):
     enable_testing = panel_settings.get('ENABLE_TESTING', True)
 
     context = admin.site.each_context(request)
+    context.update(get_css_context())
     context.update(
         {
             "title": f"URL Detail: {url['pattern']}",
