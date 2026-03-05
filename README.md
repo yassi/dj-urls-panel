@@ -3,7 +3,7 @@
 [![PyPI version](https://badge.fury.io/py/dj-urls-panel.svg)](https://badge.fury.io/py/dj-urls-panel)
 [![Python versions](https://img.shields.io/pypi/pyversions/dj-urls-panel.svg)](https://pypi.org/project/dj-urls-panel/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Downloads](https://img.shields.io/pypi/dm/dj-control-room.svg)](https://pypi.org/project/dj-control-room/)
+[![Downloads](https://img.shields.io/pypi/dm/dj-urls-panel.svg)](https://pypi.org/project/dj-urls-panel/)
 
 
 # Dj Urls Panel
