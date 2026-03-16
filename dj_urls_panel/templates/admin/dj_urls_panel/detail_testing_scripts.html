@@ -174,8 +174,11 @@ function addHeader() {
     row.innerHTML = `
         <input type="text" class="header-key" placeholder="{% trans 'Header name' %}">
         <input type="text" class="header-value" placeholder="{% trans 'Header value' %}">
-        <button type="button" class="remove-header-btn" onclick="removeHeader(this)">×</button>
+        <button type="button" class="remove-header-btn">×</button>
     `;
+    row.querySelector('.remove-header-btn').addEventListener('click', function() {
+        removeHeader(this);
+    });
     container.appendChild(row);
     
     // Add event listeners to new inputs
@@ -464,10 +467,30 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.header-key, .header-value').forEach(function(input) {
         input.addEventListener('input', updateCurlCommand);
     });
-    
+
+    // Attach button event listeners
+    document.querySelector('.add-header-btn').addEventListener('click', addHeader);
+    document.getElementById('headers-container').addEventListener('click', function(event) {
+        if (event.target.classList.contains('remove-header-btn')) {
+            removeHeader(event.target);
+        }
+    });
+    document.querySelector('.format-json-btn').addEventListener('click', formatJson);
+    var generateSampleBtn = document.querySelector('.generate-sample-btn');
+    if (generateSampleBtn) {
+        generateSampleBtn.addEventListener('click', generateSampleBody);
+    }
+    document.getElementById('curl-copy-icon').addEventListener('click', copyCurlCommand);
+    document.getElementById('send-request-btn').addEventListener('click', sendRequest);
+    document.querySelectorAll('.response-tab').forEach(function(btn) {
+        btn.addEventListener('click', function(event) {
+            showResponseTab(btn.dataset.tab, event);
+        });
+    });
+
     // Generate initial cURL command
     updateCurlCommand();
-    
+
     // Set initial send button state
     updateSendButtonState();
 });

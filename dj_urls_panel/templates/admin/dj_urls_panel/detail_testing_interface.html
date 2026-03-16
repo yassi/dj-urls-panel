@@ -63,10 +63,10 @@
                         <div class="header-row">
                             <input type="text" class="header-key" placeholder="{% trans 'Header name' %}">
                             <input type="text" class="header-value" placeholder="{% trans 'Header value' %}">
-                            <button type="button" class="remove-header-btn" onclick="removeHeader(this)">×</button>
+                            <button type="button" class="remove-header-btn">×</button>
                         </div>
                     </div>
-                    <button type="button" class="add-header-btn" onclick="addHeader()">+ {% trans "Add Header" %}</button>
+                    <button type="button" class="add-header-btn">+ {% trans "Add Header" %}</button>
                 </div>
             </div>
 
@@ -76,9 +76,9 @@
                     <label for="request-body">{% trans "Request Body" %}</label>
                     <textarea id="request-body" class="request-body-textarea" placeholder='{% trans "Enter JSON body..." %}'></textarea>
                     <div class="body-actions">
-                        <button type="button" class="format-json-btn" onclick="formatJson()">{% trans "Format JSON" %}</button>
+                        <button type="button" class="format-json-btn">{% trans "Format JSON" %}</button>
                         {% if serializer_info %}
-                        <button type="button" class="generate-sample-btn" onclick="generateSampleBody()">{% trans "Generate Sample" %}</button>
+                        <button type="button" class="generate-sample-btn">{% trans "Generate Sample" %}</button>
                         {% endif %}
                     </div>
                 </div>
@@ -89,7 +89,7 @@
                 <div class="test-input-group">
                     <label>
                         {% trans "cURL Command" %}
-                        <span class="curl-copy-icon" id="curl-copy-icon" onclick="copyCurlCommand()" title="{% trans 'Copy to clipboard' %}">📋</span>
+                        <span class="curl-copy-icon" id="curl-copy-icon" title="{% trans 'Copy to clipboard' %}">📋</span>
                         <span class="curl-copy-feedback" id="curl-copy-feedback"></span>
                     </label>
                     <div class="curl-display">
@@ -100,7 +100,7 @@
 
             <!-- Action Buttons -->
             <div class="test-row">
-                <button type="button" id="send-request-btn" class="send-request-btn" onclick="sendRequest()">{% trans "Send Request" %}</button>
+                <button type="button" id="send-request-btn" class="send-request-btn">{% trans "Send Request" %}</button>
                 <div id="param-warning" class="param-warning" style="display: none; margin-top: 10px; color: #ba2121; font-size: 12px;">
                     {% trans "Please fill in all URL parameters before sending the request." %}
                 </div>
@@ -116,8 +116,8 @@
                             <span class="response-time" id="response-time"></span>
                         </div>
                         <div class="response-tabs">
-                            <button type="button" class="response-tab active" onclick="showResponseTab('body', event)">{% trans "Body" %}</button>
-                            <button type="button" class="response-tab" onclick="showResponseTab('headers', event)">{% trans "Headers" %}</button>
+                            <button type="button" class="response-tab active" data-tab="body">{% trans "Body" %}</button>
+                            <button type="button" class="response-tab" data-tab="headers">{% trans "Headers" %}</button>
                         </div>
                         <div class="response-body-container" id="response-body-container">
                             <pre id="response-body" class="response-body"></pre>
