@@ -20,10 +20,10 @@ from dj_urls_panel.utils import (
     UrlListInterface,
 )
 
-from .base import CeleryPanelTestCase
+from .base import UrlsPanelTestCase
 
 
-class TestExtractUrlParameters(CeleryPanelTestCase):
+class TestExtractUrlParameters(UrlsPanelTestCase):
     """Test cases for the extract_url_parameters utility function."""
 
     def test_no_parameters(self):
@@ -97,7 +97,7 @@ class TestExtractUrlParameters(CeleryPanelTestCase):
         self.assertEqual(params[1]["type"], "integer")
 
 
-class TestGetViewHttpMethods(CeleryPanelTestCase):
+class TestGetViewHttpMethods(UrlsPanelTestCase):
     """Test cases for the get_view_http_methods utility function."""
 
     def test_none_callback(self):
@@ -187,7 +187,7 @@ class TestGetViewHttpMethods(CeleryPanelTestCase):
         self.assertEqual(len(methods), 3)
 
 
-class TestExecuteRequestView(CeleryPanelTestCase):
+class TestExecuteRequestView(UrlsPanelTestCase):
     """Test cases for the execute_request API endpoint."""
 
     def test_execute_request_success(self):
@@ -262,7 +262,7 @@ class TestExecuteRequestView(CeleryPanelTestCase):
         self.assertEqual(response.status_code, 302)
 
 
-class TestUrlDetailView(CeleryPanelTestCase):
+class TestUrlDetailView(UrlsPanelTestCase):
     """Test cases for the url_detail view with testing interface context."""
 
     def test_url_detail_includes_http_methods(self):
@@ -289,7 +289,7 @@ class TestUrlDetailView(CeleryPanelTestCase):
             self.assertIn("url_parameters", response.context)
 
 
-class TestExcludeUrls(CeleryPanelTestCase):
+class TestExcludeUrls(UrlsPanelTestCase):
     """Test cases for EXCLUDE_URLS setting."""
 
     def test_exclude_urls_filters_patterns(self):
@@ -348,7 +348,7 @@ class TestExcludeUrls(CeleryPanelTestCase):
             self.assertEqual(len(api_urls), 0, "API URLs should be excluded")
 
 
-class TestUrlConfig(CeleryPanelTestCase):
+class TestUrlConfig(UrlsPanelTestCase):
     """Test cases for URL_CONFIG setting."""
 
     def test_url_config_uses_custom_urlconf(self):
@@ -380,7 +380,7 @@ class TestUrlConfig(CeleryPanelTestCase):
             self.assertEqual(interface.urlconf, 'some.other.urls')
 
 
-class TestEnableTesting(CeleryPanelTestCase):
+class TestEnableTesting(UrlsPanelTestCase):
     """Test cases for ENABLE_TESTING setting."""
 
     def test_testing_disabled_rejects_requests(self):
@@ -454,7 +454,7 @@ class TestEnableTesting(CeleryPanelTestCase):
                 self.assertFalse(response.context['enable_testing'])
 
 
-class TestAllowedHosts(CeleryPanelTestCase):
+class TestAllowedHosts(UrlsPanelTestCase):
     """Test cases for ALLOWED_HOSTS setting and SSRF protection."""
 
     def test_blocks_localhost_by_default(self):
@@ -530,7 +530,7 @@ class TestAllowedHosts(CeleryPanelTestCase):
             self.assertIn("blocked", result["error"].lower())
 
 
-class TestDrfSerializerInfo(CeleryPanelTestCase):
+class TestDrfSerializerInfo(UrlsPanelTestCase):
     """Test cases for DRF serializer information extraction."""
 
     def test_none_view_class(self):
