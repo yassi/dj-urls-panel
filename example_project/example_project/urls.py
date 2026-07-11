@@ -19,6 +19,7 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
+    path("control-room-base/", include("dj_control_room_base.urls")),
     path("admin/dj-urls-panel/", include("dj_urls_panel.urls")),
     path("admin/dj-cache-panel/", include("dj_cache_panel.urls")),
     path("admin/", admin.site.urls),

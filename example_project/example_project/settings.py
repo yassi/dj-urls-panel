@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     # "dj_cache_panel",
+    "dj_control_room_base",
     "dj_urls_panel",
     "api",
     "example_project",  # For management commands

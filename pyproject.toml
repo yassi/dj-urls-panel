@@ -37,6 +37,7 @@ keywords = ["django", "admin", "panel"]
 dependencies = [
     "Django>=4.2",
     "requests>=2.28.0",
+    "django-control-room-base>=1.2.0",
 ]
 
 [project.entry-points."dj_control_room.panels"]
