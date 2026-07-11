@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     # "dj_cache_panel",
     "dj_control_room_base",
     "dj_urls_panel",
+    "dj_control_room",
     "api",
     "example_project",  # For management commands
 ]
