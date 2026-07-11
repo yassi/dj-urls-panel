@@ -1,14 +1,11 @@
-from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render
-from django.contrib import admin
 from django.http import Http404, JsonResponse
 from django.views.decorators.http import require_http_methods
-from django.conf import settings
 import json
 import urllib.parse
 import re
 
-from .conf import get_css_context
+from .conf import panel_config
 from .utils import UrlListInterface
 
 
@@ -27,8 +24,7 @@ def _is_url_allowed(url):
     """
     from urllib.parse import urlparse
     
-    panel_settings = getattr(settings, 'DJ_URLS_PANEL_SETTINGS', {})
-    allowed_hosts = panel_settings.get('ALLOWED_HOSTS', None)
+    allowed_hosts = panel_config.get_settings('ALLOWED_HOSTS')
     
     try:
         parsed = urlparse(url)
@@ -67,7 +63,7 @@ def _is_url_allowed(url):
         return False, f"Invalid URL: {str(e)}"
 
 
-@staff_member_required
+@panel_config.permission_required("index")
 def index(request):
     """
     Display panel dashboard with URL list.
@@ -119,25 +115,22 @@ def index(request):
     # Check if there are root-level URLs (no namespace)
     has_root_urls = any(not url["namespace"] for url in url_interface.get_url_list())
 
-    context = admin.site.each_context(request)
-    context.update(get_css_context())
-    context.update(
-        {
-            "title": "Dj Urls Panel",
-            "urls": urls,
-            "stats": stats,
-            "grouped_urls": grouped_urls,
-            "search_query": search_query,
-            "namespace_filter": namespace_filter,
-            "available_namespaces": available_namespaces,
-            "has_root_urls": has_root_urls,
-            "total_displayed": len(urls),
-        }
+    context = panel_config.get_context(
+        request,
+        title="Dj Urls Panel",
+        urls=urls,
+        stats=stats,
+        grouped_urls=grouped_urls,
+        search_query=search_query,
+        namespace_filter=namespace_filter,
+        available_namespaces=available_namespaces,
+        has_root_urls=has_root_urls,
+        total_displayed=len(urls),
     )
     return render(request, "admin/dj_urls_panel/index.html", context)
 
 
-@staff_member_required
+@panel_config.permission_required("detail")
 def url_detail(request, pattern):
     """
     Display detailed information about a specific URL.
@@ -162,35 +155,31 @@ def url_detail(request, pattern):
     # Build the base URL for testing
     base_url = request.build_absolute_uri("/").rstrip("/")
     test_url = base_url + url["pattern"]
-    
-    # Check if testing is enabled
-    panel_settings = getattr(settings, 'DJ_URLS_PANEL_SETTINGS', {})
-    enable_testing = panel_settings.get('ENABLE_TESTING', True)
 
-    context = admin.site.each_context(request)
-    context.update(get_css_context())
-    context.update(
-        {
-            "title": f"URL Detail: {url['pattern']}",
-            "url": url,
-            "short_name": short_name,
-            "test_url": test_url,
-            "base_url": base_url,
-            "http_methods": url.get("http_methods", ["GET"]),
-            "url_parameters": url.get("url_parameters", []),
-            "serializer_info": url.get("serializer_info"),
-            "serializer_fields_json": json.dumps(
-                url.get("serializer_info", {}).get("fields", [])
-                if url.get("serializer_info")
-                else []
-            ),
-            "enable_testing": enable_testing,
-        }
+    # Check if testing is enabled
+    enable_testing = panel_config.get_settings("ENABLE_TESTING")
+
+    context = panel_config.get_context(
+        request,
+        title=f"URL Detail: {url['pattern']}",
+        url=url,
+        short_name=short_name,
+        test_url=test_url,
+        base_url=base_url,
+        http_methods=url.get("http_methods", ["GET"]),
+        url_parameters=url.get("url_parameters", []),
+        serializer_info=url.get("serializer_info"),
+        serializer_fields_json=json.dumps(
+            url.get("serializer_info", {}).get("fields", [])
+            if url.get("serializer_info")
+            else []
+        ),
+        enable_testing=enable_testing,
     )
     return render(request, "admin/dj_urls_panel/detail.html", context)
 
 
-@staff_member_required
+@panel_config.permission_required("execute")
 @require_http_methods(["POST"])
 def execute_request(request):
     """
@@ -198,10 +187,9 @@ def execute_request(request):
     This is a proxy endpoint for testing URLs.
     """
     from django.conf import settings as django_settings
-    
+
     # Check if testing is enabled FIRST (before any other checks)
-    panel_settings = getattr(django_settings, 'DJ_URLS_PANEL_SETTINGS', {})
-    enable_testing = panel_settings.get('ENABLE_TESTING', True)
+    enable_testing = panel_config.get_settings("ENABLE_TESTING")
     
     if not enable_testing:
         return JsonResponse(
