@@ -1,40 +1,42 @@
 {% load i18n %}
 
 {% if url.name %}
-<!-- URL Reversal Examples -->
-<div class="module" style="margin-top: 20px;">
-    <h2>{% trans "Usage Examples" %}</h2>
-    <div class="url-detail-content">
-        <div class="detail-section">
-            <div class="example-block">
-                <h3>{% trans "Template Usage" %}</h3>
-                <pre class="code-example">{% templatetag openblock %} url '{{ url.name }}' {% templatetag closeblock %}</pre>
-            </div>
+<div class="dcr-section-header dcr-mt-lg">
+  <h2 class="dcr-section-header__title">{% trans "Usage Examples" %}</h2>
+</div>
 
-            <div class="example-block">
-                <h3>{% trans "Python Usage" %}</h3>
-                <pre class="code-example">from django.urls import reverse
+<div class="dcr-code-viewer">
+  <div class="dcr-code-viewer__header">
+    <span class="dcr-code-viewer__label">{% trans "Template Usage" %}</span>
+  </div>
+  <pre class="dcr-code-viewer__body"><code class="language-html">{% templatetag openblock %} url '{{ url.name }}' {% templatetag closeblock %}</code></pre>
+</div>
 
-url = reverse('{{ url.name }}')</pre>
-            </div>
+<div class="dcr-code-viewer">
+  <div class="dcr-code-viewer__header">
+    <span class="dcr-code-viewer__label">{% trans "Python Usage" %}</span>
+  </div>
+  <pre class="dcr-code-viewer__body"><code class="language-python">from django.urls import reverse
 
-            {% if url.namespace %}
-            <div class="example-block">
-                <h3>{% trans "Namespace Information" %}</h3>
-                <pre class="code-example"># Short name (within same namespace)
+url = reverse('{{ url.name }}')</code></pre>
+</div>
+
+{% if url.namespace %}
+<div class="dcr-code-viewer">
+  <div class="dcr-code-viewer__header">
+    <span class="dcr-code-viewer__label">{% trans "Namespace Information" %}</span>
+  </div>
+  <pre class="dcr-code-viewer__body"><code class="language-python"># {% trans "Short name (within same namespace)" %}
 {{ short_name }}
 
-# Full namespaced name (from anywhere)
+# {% trans "Full namespaced name (from anywhere)" %}
 {{ url.name }}
 
-# Template usage
+# {% trans "Template usage" %}
 {% templatetag openblock %} url '{{ url.name }}' {% templatetag closeblock %}
 
-# Python usage
-url = reverse('{{ url.name }}')</pre>
-            </div>
-            {% endif %}
-        </div>
-    </div>
+# {% trans "Python usage" %}
+url = reverse('{{ url.name }}')</code></pre>
 </div>
+{% endif %}
 {% endif %}

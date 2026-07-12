@@ -1,39 +1,73 @@
 {% extends "admin/dj_urls_panel/base.html" %}
-{% load i18n admin_urls static %}
+{% load i18n static dcr_icons dj_urls_panel_tags %}
 
-{% block content %}
-<div id="content-main">
-    <!-- Back to List Link -->
-    <div style="margin-bottom: 20px;">
-        <a href="{% url 'dj_urls_panel:index' %}" style="color: var(--link-fg, #417690); text-decoration: none;">
-            ← {% trans "Back to URL List" %}
-        </a>
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'dj_control_room_base/vendor/highlight-github-dark.min.css' %}">
+<script src="{% static 'dj_control_room_base/vendor/highlight.min.js' %}"></script>
+{% endblock %}
+
+{% block panel_breadcrumbs %}
+{{ block.super }}
+&rsaquo; <code class="dcr-code">{{ url.pattern }}</code>
+{% endblock %}
+
+{% block panel_content %}
+
+<a href="{% url 'dj_urls_panel:index' %}" class="dcr-back-link">{% trans "Back to URL List" %}</a>
+
+<div class="dcr-page-header">
+  <div class="dcr-page-header__main">
+    <div class="dcr-page-header__icon dcr-icon-color--info">
+      {% dcr_icon "link" %}
     </div>
-
-    <!-- URL Detail Card -->
-    {% include "admin/dj_urls_panel/detail_card.html" %}
-
-    <!-- DRF Serializer Information -->
-    {% include "admin/dj_urls_panel/detail_serializer_info.html" %}
-
-    <!-- URL Testing Interface -->
-    {% if enable_testing %}
-        {% include "admin/dj_urls_panel/detail_testing_interface.html" %}
-    {% else %}
-        <div class="module" style="margin-top: 20px;">
-            <div style="padding: 20px; text-align: center; color: #666;">
-                <p><strong>{% trans "URL Testing Interface is Disabled" %}</strong></p>
-                <p>{% trans "To enable URL testing, set" %} <code>ENABLE_TESTING=True</code> {% trans "in" %} <code>DJ_URLS_PANEL_SETTINGS</code>.</p>
-            </div>
-        </div>
-    {% endif %}
-
-    <!-- URL Reversal Examples -->
-    {% include "admin/dj_urls_panel/detail_usage_examples.html" %}
+    <div class="dcr-page-header__body">
+      <div class="dcr-page-header__title-row">
+        <h1 class="dcr-page-header__title dcr-font-mono">{{ url.pattern }}</h1>
+        {% if url.name %}
+        <span class="dcr-badge dcr-badge--success">{{ url.name }}</span>
+        {% else %}
+        <span class="dcr-badge dcr-badge--muted">{% trans "unnamed" %}</span>
+        {% endif %}
+      </div>
+      <p class="dcr-page-header__subtitle">
+        <code class="dcr-code">{{ url.view }}</code>
+      </p>
+    </div>
+  </div>
 </div>
 
-<!-- Testing Interface JavaScript -->
+{% include "admin/dj_urls_panel/detail_card.html" %}
+
+{% include "admin/dj_urls_panel/detail_serializer_info.html" %}
+
 {% if enable_testing %}
-    {% include "admin/dj_urls_panel/detail_testing_scripts.html" %}
+{% include "admin/dj_urls_panel/detail_testing_interface.html" %}
+{% else %}
+<div class="dcr-callout dcr-callout--info dcr-mt-lg">
+  <p class="dcr-callout__title">{% trans "URL Testing Interface is Disabled" %}</p>
+  <p class="dcr-callout__body">
+    {% trans "To enable URL testing, set" %} <code class="dcr-code">ENABLE_TESTING=True</code> {% trans "in" %} <code class="dcr-code">DJ_URLS_PANEL_SETTINGS</code>.
+  </p>
+</div>
+{% endif %}
+
+{% include "admin/dj_urls_panel/detail_usage_examples.html" %}
+
+{% endblock %}
+
+{% block panel_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Highlights the static Usage Examples code blocks. The Test Request
+    // panel's curl/response code blocks are populated dynamically and rely
+    // on the plain "hljs" class for their dark background instead.
+    document.querySelectorAll('pre.dcr-code-viewer__body code.language-html, pre.dcr-code-viewer__body code.language-python').forEach(function (el) {
+        hljs.highlightElement(el);
+    });
+});
+</script>
+{% if enable_testing %}
+{% include "admin/dj_urls_panel/detail_testing_scripts.html" %}
 {% endif %}
 {% endblock %}
