@@ -19,9 +19,9 @@
     resize: vertical;
 }
 
-/* Give the icon-only "remove header" button a bit more breathing room than
-   the design system's default square icon-only padding. */
-.dj-urls-panel-remove-header-btn {
+/* Give icon-only "remove row" buttons (headers, query params) a bit more
+   breathing room than the design system's default square icon-only padding. */
+.dj-urls-panel-remove-row-btn {
     padding-left: 14px;
     padding-right: 14px;
 }

@@ -50,6 +50,11 @@ document.querySelectorAll('.url-param-input').forEach(function(input) {
     input.addEventListener('input', updateUrlWithParams);
 });
 
+// Update URL when query parameters change
+document.querySelectorAll('.query-param-key, .query-param-value').forEach(function(input) {
+    input.addEventListener('input', updateUrlWithParams);
+});
+
 function cleanRegexSyntax(url) {
     // Clean up regex syntax that remains after parameter replacement
     // This converts regex patterns into actual URLs suitable for testing
@@ -68,6 +73,30 @@ function cleanRegexSyntax(url) {
     url = url.replace(/^\^/g, '');
 
     return url;
+}
+
+function getQueryParams() {
+    // Ordered list of [key, value] pairs - order matters for a stable query
+    // string, and duplicate keys are legal in query strings so we don't
+    // dedupe into an object like getHeaders() does.
+    const params = [];
+    document.querySelectorAll('.query-param-row').forEach(function(row) {
+        const key = row.querySelector('.query-param-key').value.trim();
+        const value = row.querySelector('.query-param-value').value;
+        if (key) {
+            params.push([key, value]);
+        }
+    });
+    return params;
+}
+
+function buildQueryString(params) {
+    if (!params.length) {
+        return '';
+    }
+    return '?' + params
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+        .join('&');
 }
 
 function updateUrlWithParams() {
@@ -91,9 +120,9 @@ function updateUrlWithParams() {
     // Clean up any remaining regex syntax
     url = cleanRegexSyntax(url);
 
-    document.getElementById('test-url').value = "{{ base_url }}" + url;
+    document.getElementById('test-url').value = "{{ base_url }}" + url + buildQueryString(getQueryParams());
 
-    // Update cURL command when URL parameters change
+    // Update cURL command when URL or query parameters change
     updateCurlCommand();
 
     // Update send button state
@@ -135,7 +164,7 @@ function addHeader() {
     row.innerHTML = `
         <input type="text" class="dcr-input dj-urls-panel-mono header-key" placeholder="{% trans 'Header name' %}">
         <input type="text" class="dcr-input dj-urls-panel-mono header-value" placeholder="{% trans 'Header value' %}">
-        <button type="button" class="dcr-btn dcr-btn--danger dcr-btn--ghost dcr-btn--icon-only dj-urls-panel-remove-header-btn" onclick="removeHeader(this)" aria-label="{% trans 'Remove header' %}" title="{% trans 'Remove header' %}">
+        <button type="button" class="dcr-btn dcr-btn--danger dcr-btn--ghost dcr-btn--icon-only dj-urls-panel-remove-row-btn" onclick="removeHeader(this)" aria-label="{% trans 'Remove header' %}" title="{% trans 'Remove header' %}">
             <svg class="dcr-btn__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
         </button>
     `;
@@ -158,6 +187,38 @@ function removeHeader(btn) {
         row.querySelectorAll('input').forEach(input => input.value = '');
     }
     updateCurlCommand();
+}
+
+function addQueryParam() {
+    const container = document.getElementById('query-params-container');
+    const row = document.createElement('div');
+    row.className = 'dcr-form__row--stretch query-param-row';
+    row.innerHTML = `
+        <input type="text" class="dcr-input dj-urls-panel-mono query-param-key" placeholder="{% trans 'Parameter name' %}">
+        <input type="text" class="dcr-input dj-urls-panel-mono query-param-value" placeholder="{% trans 'Parameter value' %}">
+        <button type="button" class="dcr-btn dcr-btn--danger dcr-btn--ghost dcr-btn--icon-only dj-urls-panel-remove-row-btn" onclick="removeQueryParam(this)" aria-label="{% trans 'Remove parameter' %}" title="{% trans 'Remove parameter' %}">
+            <svg class="dcr-btn__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+        </button>
+    `;
+    container.appendChild(row);
+
+    // Add event listeners to new inputs
+    row.querySelector('.query-param-key').addEventListener('input', updateUrlWithParams);
+    row.querySelector('.query-param-value').addEventListener('input', updateUrlWithParams);
+
+    updateUrlWithParams();
+}
+
+function removeQueryParam(btn) {
+    const row = btn.parentElement;
+    const container = row.parentElement;
+    if (container.children.length > 1) {
+        row.remove();
+    } else {
+        // Clear the inputs instead of removing the last row
+        row.querySelectorAll('input').forEach(input => input.value = '');
+    }
+    updateUrlWithParams();
 }
 
 function getHeaders() {
