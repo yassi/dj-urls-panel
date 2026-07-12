@@ -25,3 +25,12 @@
     padding-left: 14px;
     padding-right: 14px;
 }
+
+/* Readonly fields in the test request form (computed URL, parameter name
+   labels) should look visually distinct from editable inputs so it's clear
+   at a glance which fields can be typed into. */
+.dcr-input[readonly] {
+    background: var(--dcr-color-bg-subtle);
+    color: var(--dcr-color-text-muted);
+    cursor: default;
+}

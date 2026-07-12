@@ -25,13 +25,12 @@
         <label class="dcr-form__label">{% trans "URL Parameters" %}</label>
         <div class="dcr-d-flex dcr-flex-col dcr-gap-sm">
           {% for param in url_parameters %}
-          <div class="dcr-form__row" style="flex-wrap:nowrap;align-items:center">
-            <div class="dcr-field" style="min-width:180px">
-              <label class="dcr-field__label" for="param-{{ param.name }}">{{ param.name }} <span class="dcr-text-muted">({{ param.type }})</span></label>
-            </div>
-            <div class="dcr-field dcr-field--grow">
-              <input type="text" id="param-{{ param.name }}" class="dcr-input dj-urls-panel-mono url-param-input" data-param-name="{{ param.name }}" placeholder="{% trans 'Enter value...' %}">
-            </div>
+          <div class="dcr-form__row--stretch">
+            <input type="text" class="dcr-input dj-urls-panel-mono" value="{{ param.name }} ({{ param.type }})" aria-label="{% trans 'Parameter name' %}" readonly>
+            <input type="text" id="param-{{ param.name }}" class="dcr-input dj-urls-panel-mono url-param-input" data-param-name="{{ param.name }}" placeholder="{% trans 'Enter value...' %}">
+            <button type="button" class="dcr-btn dcr-btn--danger dcr-btn--ghost dcr-btn--icon-only dj-urls-panel-remove-row-btn" onclick="clearUrlParam(this)" aria-label="{% trans 'Clear value' %}" title="{% trans 'Clear value' %}">
+              <svg class="dcr-btn__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            </button>
           </div>
           {% endfor %}
         </div>

@@ -129,6 +129,15 @@ function updateUrlWithParams() {
     updateSendButtonState();
 }
 
+function clearUrlParam(btn) {
+    const row = btn.parentElement;
+    const input = row.querySelector('.url-param-input');
+    if (input) {
+        input.value = '';
+        updateUrlWithParams();
+    }
+}
+
 function hasUnfilledParameters() {
     // Check if any parameter inputs are empty
     let hasEmpty = false;
