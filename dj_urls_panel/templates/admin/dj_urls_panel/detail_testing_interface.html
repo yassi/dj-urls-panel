@@ -1,118 +1,124 @@
 {% load i18n %}
 
-<div class="dcr-section-header dcr-mt-lg">
-  <h2 class="dcr-section-header__title">{% trans "Test Request" %}</h2>
-</div>
-
-<div class="dcr-form" style="padding:0">
-
-  <div class="dcr-form__group">
-    <label class="dcr-form__label" for="test-method">{% trans "Method" %}</label>
-    <div class="dcr-form__row--stretch">
-      <select id="test-method" class="dcr-select" style="max-width:130px;flex:none">
-        {% for method in http_methods %}
-        <option value="{{ method }}">{{ method }}</option>
-        {% endfor %}
-      </select>
-      <input type="text" id="test-url" class="dcr-input dj-urls-panel-mono" value="{{ test_url }}" placeholder="{% trans 'Enter URL...' %}" readonly>
-    </div>
+<div class="dcr-card dcr-mt-lg">
+  <div class="dcr-card__header">
+    <h3 class="dcr-card__title">{% trans "Test Request" %}</h3>
   </div>
 
-  {% if url_parameters %}
-  <div class="dcr-form__group">
-    <label class="dcr-form__label">{% trans "URL Parameters" %}</label>
-    <div class="dcr-d-flex dcr-flex-col dcr-gap-sm">
-      {% for param in url_parameters %}
-      <div class="dcr-form__row" style="flex-wrap:nowrap">
-        <div class="dcr-field" style="min-width:180px">
-          <label class="dcr-field__label" for="param-{{ param.name }}">{{ param.name }} <span class="dcr-text-muted">({{ param.type }})</span></label>
+  <div class="dcr-card__body">
+    <div class="dcr-form" style="padding:0">
+
+      <div class="dcr-form__group">
+        <label class="dcr-form__label" for="test-method">{% trans "Method" %}</label>
+        <div class="dcr-form__row--stretch">
+          <select id="test-method" class="dcr-select" style="max-width:130px;flex:none">
+            {% for method in http_methods %}
+            <option value="{{ method }}">{{ method }}</option>
+            {% endfor %}
+          </select>
+          <input type="text" id="test-url" class="dcr-input dj-urls-panel-mono" value="{{ test_url }}" placeholder="{% trans 'Enter URL...' %}" readonly>
+        </div>
+      </div>
+
+      {% if url_parameters %}
+      <div class="dcr-form__group">
+        <label class="dcr-form__label">{% trans "URL Parameters" %}</label>
+        <div class="dcr-d-flex dcr-flex-col dcr-gap-sm">
+          {% for param in url_parameters %}
+          <div class="dcr-form__row" style="flex-wrap:nowrap;align-items:center">
+            <div class="dcr-field" style="min-width:180px">
+              <label class="dcr-field__label" for="param-{{ param.name }}">{{ param.name }} <span class="dcr-text-muted">({{ param.type }})</span></label>
+            </div>
+            <div class="dcr-field dcr-field--grow">
+              <input type="text" id="param-{{ param.name }}" class="dcr-input dj-urls-panel-mono url-param-input" data-param-name="{{ param.name }}" placeholder="{% trans 'Enter value...' %}">
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="dcr-form__row">
+        <div class="dcr-field">
+          <label class="dcr-field__label" for="auth-type">{% trans "Authentication" %}</label>
+          <select id="auth-type" class="dcr-select">
+            <option value="session" selected>{% trans "Current Session" %}</option>
+            <option value="">{% trans "None" %}</option>
+            <option value="session_cookie">{% trans "Session Cookie" %}</option>
+            <option value="bearer">{% trans "Bearer Token" %}</option>
+            <option value="token">{% trans "Token (DRF)" %}</option>
+            <option value="basic">{% trans "Basic Auth" %}</option>
+          </select>
         </div>
         <div class="dcr-field dcr-field--grow">
-          <input type="text" id="param-{{ param.name }}" class="dcr-input dj-urls-panel-mono url-param-input" data-param-name="{{ param.name }}" placeholder="{% trans 'Enter value...' %}">
+          <label class="dcr-field__label">&nbsp;</label>
+          <input type="text" id="auth-value" class="dcr-input dj-urls-panel-mono" placeholder="{% trans 'Token or username:password...' %}" disabled>
         </div>
       </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
 
-  <div class="dcr-form__row">
-    <div class="dcr-field">
-      <label class="dcr-field__label" for="auth-type">{% trans "Authentication" %}</label>
-      <select id="auth-type" class="dcr-select">
-        <option value="session" selected>{% trans "Current Session" %}</option>
-        <option value="">{% trans "None" %}</option>
-        <option value="session_cookie">{% trans "Session Cookie" %}</option>
-        <option value="bearer">{% trans "Bearer Token" %}</option>
-        <option value="token">{% trans "Token (DRF)" %}</option>
-        <option value="basic">{% trans "Basic Auth" %}</option>
-      </select>
-    </div>
-    <div class="dcr-field dcr-field--grow">
-      <label class="dcr-field__label">&nbsp;</label>
-      <input type="text" id="auth-value" class="dcr-input dj-urls-panel-mono" placeholder="{% trans 'Token or username:password...' %}" disabled>
-    </div>
-  </div>
-
-  <div class="dcr-form__group">
-    <label class="dcr-form__label">{% trans "Headers" %}</label>
-    <div class="dcr-d-flex dcr-flex-col dcr-gap-sm" id="headers-container">
-      <div class="dcr-form__row header-row" style="flex-wrap:nowrap">
-        <input type="text" class="dcr-input dj-urls-panel-mono header-key" placeholder="{% trans 'Header name' %}">
-        <input type="text" class="dcr-input dj-urls-panel-mono header-value" placeholder="{% trans 'Header value' %}">
-        <button type="button" class="dcr-btn dcr-btn--ghost dcr-btn--danger dcr-btn--icon-only dcr-btn--sm" onclick="removeHeader(this)" title="{% trans 'Remove header' %}">&times;</button>
+      <div class="dcr-form__group">
+        <label class="dcr-form__label">{% trans "Headers" %}</label>
+        <div class="dcr-d-flex dcr-flex-col dcr-gap-sm" id="headers-container">
+          <div class="dcr-form__row--stretch header-row">
+            <input type="text" class="dcr-input dj-urls-panel-mono header-key" placeholder="{% trans 'Header name' %}">
+            <input type="text" class="dcr-input dj-urls-panel-mono header-value" placeholder="{% trans 'Header value' %}">
+            <button type="button" class="dcr-btn dcr-btn--danger dcr-btn--ghost dcr-btn--icon-only dj-urls-panel-remove-header-btn" onclick="removeHeader(this)" aria-label="{% trans 'Remove header' %}" title="{% trans 'Remove header' %}">
+              <svg class="dcr-btn__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            </button>
+          </div>
+        </div>
+        <button type="button" class="dcr-btn dcr-mt-sm" style="width:fit-content" onclick="addHeader()">{% trans "Add Header" %}</button>
       </div>
-    </div>
-    <button type="button" class="dcr-btn dcr-btn--ghost dcr-btn--sm dcr-mt-sm" style="width:fit-content" onclick="addHeader()">+ {% trans "Add Header" %}</button>
-  </div>
 
-  <div class="dcr-form__group" id="body-row">
-    <label class="dcr-form__label" for="request-body">{% trans "Request Body" %}</label>
-    <textarea id="request-body" class="dcr-input dj-urls-panel-mono dj-urls-panel-textarea" placeholder='{% trans "Enter JSON body..." %}'></textarea>
-    <div class="dcr-d-flex dcr-gap-sm dcr-mt-sm">
-      <button type="button" class="dcr-btn dcr-btn--ghost dcr-btn--sm" onclick="formatJson()">{% trans "Format JSON" %}</button>
-      {% if serializer_info %}
-      <button type="button" class="dcr-btn dcr-btn--ghost dcr-btn--sm" onclick="generateSampleBody()">{% trans "Generate Sample" %}</button>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="dcr-form__group">
-    <label class="dcr-form__label">{% trans "cURL Command" %}</label>
-    <div class="dcr-code-viewer" style="margin-bottom:0">
-      <div class="dcr-code-viewer__header">
-        <span class="dcr-code-viewer__label">curl</span>
-        <button type="button" class="dcr-btn dcr-btn--ghost dcr-btn--sm" id="curl-copy-btn" onclick="copyCurlCommand()" title="{% trans 'Copy to clipboard' %}">
-          {% trans "Copy" %}
-        </button>
+      <div class="dcr-form__group" id="body-row">
+        <label class="dcr-form__label" for="request-body">{% trans "Request Body" %}</label>
+        <textarea id="request-body" class="dcr-input dj-urls-panel-mono dj-urls-panel-textarea" placeholder='{% trans "Enter JSON body..." %}'></textarea>
+        <div class="dcr-d-flex dcr-gap-sm dcr-mt-sm">
+          <button type="button" class="dcr-btn dcr-btn--sm" onclick="formatJson()">{% trans "Format JSON" %}</button>
+          {% if serializer_info %}
+          <button type="button" class="dcr-btn dcr-btn--sm" onclick="generateSampleBody()">{% trans "Generate Sample" %}</button>
+          {% endif %}
+        </div>
       </div>
-      <pre class="dcr-code-viewer__body"><code id="curl-command" class="hljs language-bash"></code></pre>
+
+      <div class="dcr-form__group">
+        <label class="dcr-form__label">{% trans "cURL Command" %}</label>
+        <div class="dcr-code-viewer" style="margin-bottom:0">
+          <div class="dcr-code-viewer__header">
+            <span class="dcr-code-viewer__label">curl</span>
+            <button type="button" class="dcr-btn dcr-btn--sm" id="curl-copy-btn" onclick="copyCurlCommand()" title="{% trans 'Copy to clipboard' %}">
+              {% trans "Copy" %}
+            </button>
+          </div>
+          <pre class="dcr-code-viewer__body"><code id="curl-command" class="hljs language-bash"></code></pre>
+        </div>
+      </div>
+
+      <div class="dcr-form__group">
+        <button type="button" id="send-request-btn" class="dcr-btn dcr-btn--primary dcr-w-full" onclick="sendRequest()">{% trans "Send Request" %}</button>
+        <p id="param-warning" class="dcr-text-danger dcr-text-sm dcr-mt-sm" style="display: none;">
+          {% trans "Please fill in all URL parameters before sending the request." %}
+        </p>
+      </div>
+
+      <div class="dcr-form__group" id="response-row" style="display: none;">
+        <label class="dcr-form__label">{% trans "Response" %}</label>
+        <div class="dcr-d-flex dcr-items-center dcr-justify-between dcr-mb-sm">
+          <span id="response-status" class="dcr-badge"></span>
+          <span id="response-time" class="dcr-text-muted dcr-text-sm"></span>
+        </div>
+        <nav class="dcr-tabs">
+          <button type="button" class="dcr-tabs__tab active" data-response-tab="body" onclick="showResponseTab('body', event)">{% trans "Body" %}</button>
+          <button type="button" class="dcr-tabs__tab" data-response-tab="headers" onclick="showResponseTab('headers', event)">{% trans "Headers" %}</button>
+        </nav>
+        <div class="dcr-code-viewer" style="margin-top:0" id="response-body-container">
+          <pre class="dcr-code-viewer__body"><code id="response-body" class="hljs language-json"></code></pre>
+        </div>
+        <div class="dcr-code-viewer" style="margin-top:0; display:none" id="response-headers-container">
+          <pre class="dcr-code-viewer__body"><code id="response-headers" class="hljs"></code></pre>
+        </div>
+      </div>
+
     </div>
   </div>
-
-  <div class="dcr-form__group">
-    <button type="button" id="send-request-btn" class="dcr-btn dcr-btn--primary dcr-w-full" onclick="sendRequest()">{% trans "Send Request" %}</button>
-    <p id="param-warning" class="dcr-text-danger dcr-text-sm dcr-mt-sm" style="display: none;">
-      {% trans "Please fill in all URL parameters before sending the request." %}
-    </p>
-  </div>
-
-  <div class="dcr-form__group" id="response-row" style="display: none;">
-    <label class="dcr-form__label">{% trans "Response" %}</label>
-    <div class="dcr-d-flex dcr-items-center dcr-justify-between dcr-mb-sm">
-      <span id="response-status" class="dcr-badge"></span>
-      <span id="response-time" class="dcr-text-muted dcr-text-sm"></span>
-    </div>
-    <nav class="dcr-tabs">
-      <button type="button" class="dcr-tabs__tab active" data-response-tab="body" onclick="showResponseTab('body', event)">{% trans "Body" %}</button>
-      <button type="button" class="dcr-tabs__tab" data-response-tab="headers" onclick="showResponseTab('headers', event)">{% trans "Headers" %}</button>
-    </nav>
-    <div class="dcr-code-viewer" style="margin-top:0" id="response-body-container">
-      <pre class="dcr-code-viewer__body"><code id="response-body" class="hljs language-json"></code></pre>
-    </div>
-    <div class="dcr-code-viewer" style="margin-top:0; display:none" id="response-headers-container">
-      <pre class="dcr-code-viewer__body"><code id="response-headers" class="hljs"></code></pre>
-    </div>
-  </div>
-
 </div>
