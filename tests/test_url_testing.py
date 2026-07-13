@@ -261,6 +261,613 @@ class TestExecuteRequestView(UrlsPanelTestCase):
         # Should redirect to login
         self.assertEqual(response.status_code, 302)
 
+    def test_execute_request_requests_library_missing(self):
+        """Test the friendly error returned when 'requests' isn't installed."""
+        with patch.dict('sys.modules', {'requests': None}):
+            url = reverse("dj_urls_panel:execute_request")
+
+            response = self.client.post(
+                url,
+                data=json.dumps({"url": "http://example.com/", "method": "GET"}),
+                content_type="application/json",
+            )
+
+        self.assertEqual(response.status_code, 500)
+        data = response.json()
+        self.assertIn("requests", data["error"].lower())
+        self.assertIn("pip install", data["error"])
+
+    def test_execute_request_invalid_json_body(self):
+        """Test that malformed JSON in the request body returns a 400."""
+        url = reverse("dj_urls_panel:execute_request")
+
+        response = self.client.post(
+            url,
+            data="{not valid json",
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertIn("Invalid JSON", data["error"])
+
+    def test_execute_request_timeout(self):
+        """Test that a request timeout is surfaced as a 408."""
+        import requests
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests, 'request', side_effect=requests.exceptions.Timeout("timed out")
+            ):
+                url = reverse("dj_urls_panel:execute_request")
+
+                response = self.client.post(
+                    url,
+                    data=json.dumps({"url": "http://example.com/", "method": "GET"}),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 408)
+        self.assertIn("timed out", response.json()["error"].lower())
+
+    def test_execute_request_connection_error(self):
+        """Test that a connection error is surfaced as a 502."""
+        import requests
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests,
+                'request',
+                side_effect=requests.exceptions.ConnectionError("refused"),
+            ):
+                url = reverse("dj_urls_panel:execute_request")
+
+                response = self.client.post(
+                    url,
+                    data=json.dumps({"url": "http://example.com/", "method": "GET"}),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 502)
+        self.assertIn("connection error", response.json()["error"].lower())
+
+    def test_execute_request_generic_request_exception(self):
+        """Test that a generic requests exception is surfaced as a 500."""
+        import requests
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests,
+                'request',
+                side_effect=requests.exceptions.RequestException("boom"),
+            ):
+                url = reverse("dj_urls_panel:execute_request")
+
+                response = self.client.post(
+                    url,
+                    data=json.dumps({"url": "http://example.com/", "method": "GET"}),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn("request failed", response.json()["error"].lower())
+
+    def test_execute_request_unexpected_exception(self):
+        """Test that any other unexpected exception falls through to a 500."""
+        import requests
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests, 'request', side_effect=ValueError("something unexpected")
+            ):
+                url = reverse("dj_urls_panel:execute_request")
+
+                response = self.client.post(
+                    url,
+                    data=json.dumps({"url": "http://example.com/", "method": "GET"}),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn("something unexpected", response.json()["error"])
+
+
+def _mock_proxied_response(**overrides):
+    """Build a MagicMock standing in for requests.Response, for the outbound
+    (proxied) call that execute_request makes on behalf of the browser."""
+    response = MagicMock()
+    response.status_code = overrides.get("status_code", 200)
+    response.reason = overrides.get("reason", "OK")
+    response.headers = overrides.get("headers", {})
+    response.json.return_value = overrides.get("json", {"ok": True})
+    response.elapsed.total_seconds.return_value = overrides.get("elapsed", 0.1)
+    response.url = overrides.get("url", "http://example.com/")
+    return response
+
+
+class TestExecuteRequestAuthTypes(UrlsPanelTestCase):
+    """
+    Tests for the auth_type handling (session, session_cookie, basic,
+    bearer, token) and CSRF forwarding/minting in execute_request.
+
+    These exercise the real POST endpoint end-to-end (mocking only the
+    outbound `requests` calls the proxy makes) rather than reaching into
+    the view's private helper methods, so they double as documentation of
+    the endpoint's observable behavior.
+    """
+
+    def test_session_auth_forwards_current_session_cookie(self):
+        """auth_type=session forwards the admin session cookie to the target."""
+        import requests
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests, 'request', return_value=_mock_proxied_response()
+            ) as mock_request:
+                url = reverse("dj_urls_panel:execute_request")
+                response = self.client.post(
+                    url,
+                    data=json.dumps({
+                        "url": "http://example.com/api/",
+                        "method": "GET",
+                        "auth_type": "session",
+                    }),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 200)
+        sent_cookies = mock_request.call_args.kwargs.get("cookies", {})
+        self.assertEqual(sent_cookies.get("sessionid"), self.client.cookies["sessionid"].value)
+
+    def test_session_auth_forwards_known_csrf_token_for_write_requests(self):
+        """A CSRF cookie already on hand becomes an X-CSRFToken header for writes."""
+        import requests
+
+        # Load a page that renders {% csrf_token %} so the test client picks
+        # up a real, validly-formatted CSRF cookie (an arbitrary string here
+        # would just get rejected and rotated by Django's CSRF middleware).
+        with self.settings(DJ_URLS_PANEL_SETTINGS={}):
+            self.client.get(reverse("dj_urls_panel:url_detail", kwargs={"pattern": "/admin/"}))
+        known_token = self.client.cookies["csrftoken"].value
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests, 'request', return_value=_mock_proxied_response()
+            ) as mock_request:
+                url = reverse("dj_urls_panel:execute_request")
+                response = self.client.post(
+                    url,
+                    data=json.dumps({
+                        "url": "http://example.com/api/items/",
+                        "method": "POST",
+                        "auth_type": "session",
+                    }),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 200)
+        sent_headers = mock_request.call_args.kwargs.get("headers", {})
+        self.assertEqual(sent_headers.get("X-CSRFToken"), known_token)
+
+    def test_session_auth_mints_csrf_token_when_none_available(self):
+        """Without a local CSRF cookie, a GET against the target mints one first."""
+        import requests
+
+        minted_response = _mock_proxied_response()
+        minted_response.cookies = {"csrftoken": "minted-token"}
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(requests, 'get', return_value=minted_response) as mock_get:
+                with patch.object(
+                    requests, 'request', return_value=_mock_proxied_response()
+                ) as mock_request:
+                    url = reverse("dj_urls_panel:execute_request")
+                    response = self.client.post(
+                        url,
+                        data=json.dumps({
+                            "url": "http://example.com/api/items/",
+                            "method": "POST",
+                            "auth_type": "session",
+                        }),
+                        content_type="application/json",
+                    )
+
+        self.assertEqual(response.status_code, 200)
+        mock_get.assert_called_once()
+        sent_headers = mock_request.call_args.kwargs.get("headers", {})
+        self.assertEqual(sent_headers.get("X-CSRFToken"), "minted-token")
+
+    def test_session_auth_minting_failure_still_completes_request(self):
+        """If the CSRF-minting GET blows up, the proxied request still goes through."""
+        import requests
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(requests, 'get', side_effect=Exception("network is down")):
+                with patch.object(
+                    requests, 'request', return_value=_mock_proxied_response()
+                ) as mock_request:
+                    url = reverse("dj_urls_panel:execute_request")
+                    response = self.client.post(
+                        url,
+                        data=json.dumps({
+                            "url": "http://example.com/api/items/",
+                            "method": "DELETE",
+                            "auth_type": "session",
+                        }),
+                        content_type="application/json",
+                    )
+
+        self.assertEqual(response.status_code, 200)
+        sent_headers = mock_request.call_args.kwargs.get("headers", {})
+        self.assertNotIn("X-CSRFToken", sent_headers)
+
+    def test_session_auth_get_forwards_csrf_cookie_without_minting(self):
+        """A GET with a known CSRF cookie just forwards it; no token is minted."""
+        import requests
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={}):
+            self.client.get(reverse("dj_urls_panel:url_detail", kwargs={"pattern": "/admin/"}))
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(requests, 'get') as mock_get:
+                with patch.object(
+                    requests, 'request', return_value=_mock_proxied_response()
+                ) as mock_request:
+                    url = reverse("dj_urls_panel:execute_request")
+                    response = self.client.post(
+                        url,
+                        data=json.dumps({
+                            "url": "http://example.com/api/",
+                            "method": "GET",
+                            "auth_type": "session",
+                        }),
+                        content_type="application/json",
+                    )
+
+        self.assertEqual(response.status_code, 200)
+        mock_get.assert_not_called()
+        sent_cookies = mock_request.call_args.kwargs.get("cookies", {})
+        self.assertEqual(sent_cookies.get("csrftoken"), self.client.cookies["csrftoken"].value)
+
+    def test_session_auth_minting_response_without_csrf_cookie(self):
+        """If the minting GET succeeds but carries no CSRF cookie, none is set."""
+        import requests
+
+        minted_response = _mock_proxied_response()
+        minted_response.cookies = {}
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(requests, 'get', return_value=minted_response):
+                with patch.object(
+                    requests, 'request', return_value=_mock_proxied_response()
+                ) as mock_request:
+                    url = reverse("dj_urls_panel:execute_request")
+                    response = self.client.post(
+                        url,
+                        data=json.dumps({
+                            "url": "http://example.com/api/items/",
+                            "method": "PUT",
+                            "auth_type": "session",
+                        }),
+                        content_type="application/json",
+                    )
+
+        self.assertEqual(response.status_code, 200)
+        sent_headers = mock_request.call_args.kwargs.get("headers", {})
+        self.assertNotIn("X-CSRFToken", sent_headers)
+
+    def test_session_cookie_auth_uses_supplied_session_id(self):
+        """auth_type=session_cookie forwards the explicitly supplied session id."""
+        import requests
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests, 'request', return_value=_mock_proxied_response()
+            ) as mock_request:
+                url = reverse("dj_urls_panel:execute_request")
+                response = self.client.post(
+                    url,
+                    data=json.dumps({
+                        "url": "http://example.com/api/",
+                        "method": "GET",
+                        "auth_type": "session_cookie",
+                        "auth_value": "some-other-session-id",
+                    }),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 200)
+        sent_cookies = mock_request.call_args.kwargs.get("cookies", {})
+        self.assertEqual(sent_cookies.get("sessionid"), "some-other-session-id")
+
+    def test_session_cookie_auth_without_value_is_ignored(self):
+        """session_cookie requires a truthy auth_value; without one, no cookies are sent."""
+        import requests
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests, 'request', return_value=_mock_proxied_response()
+            ) as mock_request:
+                url = reverse("dj_urls_panel:execute_request")
+                response = self.client.post(
+                    url,
+                    data=json.dumps({
+                        "url": "http://example.com/api/",
+                        "method": "GET",
+                        "auth_type": "session_cookie",
+                    }),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("cookies", mock_request.call_args.kwargs)
+
+    def test_basic_auth_sets_credentials(self):
+        """auth_type=basic with 'user:pass' becomes an HTTP basic auth tuple."""
+        import requests
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests, 'request', return_value=_mock_proxied_response()
+            ) as mock_request:
+                url = reverse("dj_urls_panel:execute_request")
+                response = self.client.post(
+                    url,
+                    data=json.dumps({
+                        "url": "http://example.com/api/",
+                        "method": "GET",
+                        "auth_type": "basic",
+                        "auth_value": "user:pass",
+                    }),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(mock_request.call_args.kwargs.get("auth"), ("user", "pass"))
+
+    def test_basic_auth_without_colon_is_ignored(self):
+        """A malformed 'basic' auth_value (no colon) results in no auth being sent."""
+        import requests
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests, 'request', return_value=_mock_proxied_response()
+            ) as mock_request:
+                url = reverse("dj_urls_panel:execute_request")
+                response = self.client.post(
+                    url,
+                    data=json.dumps({
+                        "url": "http://example.com/api/",
+                        "method": "GET",
+                        "auth_type": "basic",
+                        "auth_value": "not-a-valid-value",
+                    }),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("auth", mock_request.call_args.kwargs)
+
+    def test_bearer_auth_sets_authorization_header(self):
+        import requests
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests, 'request', return_value=_mock_proxied_response()
+            ) as mock_request:
+                url = reverse("dj_urls_panel:execute_request")
+                response = self.client.post(
+                    url,
+                    data=json.dumps({
+                        "url": "http://example.com/api/",
+                        "method": "GET",
+                        "auth_type": "bearer",
+                        "auth_value": "tok123",
+                    }),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            mock_request.call_args.kwargs["headers"].get("Authorization"), "Bearer tok123"
+        )
+
+    def test_token_auth_sets_authorization_header(self):
+        import requests
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests, 'request', return_value=_mock_proxied_response()
+            ) as mock_request:
+                url = reverse("dj_urls_panel:execute_request")
+                response = self.client.post(
+                    url,
+                    data=json.dumps({
+                        "url": "http://example.com/api/",
+                        "method": "GET",
+                        "auth_type": "token",
+                        "auth_value": "tok123",
+                    }),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            mock_request.call_args.kwargs["headers"].get("Authorization"), "Token tok123"
+        )
+
+    def test_unrecognized_auth_type_sends_no_credentials(self):
+        """An auth_value is present but auth_type matches none of the known kinds."""
+        import requests
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests, 'request', return_value=_mock_proxied_response()
+            ) as mock_request:
+                url = reverse("dj_urls_panel:execute_request")
+                response = self.client.post(
+                    url,
+                    data=json.dumps({
+                        "url": "http://example.com/api/",
+                        "method": "GET",
+                        "auth_type": "custom",
+                        "auth_value": "some-value",
+                    }),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("auth", mock_request.call_args.kwargs)
+        self.assertNotIn("Authorization", mock_request.call_args.kwargs.get("headers", {}))
+
+    def test_no_auth_type_sends_no_credentials(self):
+        import requests
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests, 'request', return_value=_mock_proxied_response()
+            ) as mock_request:
+                url = reverse("dj_urls_panel:execute_request")
+                response = self.client.post(
+                    url,
+                    data=json.dumps({"url": "http://example.com/api/", "method": "GET"}),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("auth", mock_request.call_args.kwargs)
+        self.assertNotIn("cookies", mock_request.call_args.kwargs)
+
+
+class TestExecuteRequestBodyAndResponse(UrlsPanelTestCase):
+    """Tests for outbound request body encoding and proxied response parsing."""
+
+    def test_json_body_is_forwarded_with_content_type(self):
+        """A JSON string body gets forwarded as-is with a JSON Content-Type."""
+        import requests
+
+        body = json.dumps({"name": "widget"})
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests,
+                'request',
+                return_value=_mock_proxied_response(status_code=201, reason="Created"),
+            ) as mock_request:
+                url = reverse("dj_urls_panel:execute_request")
+                response = self.client.post(
+                    url,
+                    data=json.dumps({
+                        "url": "http://example.com/api/items/",
+                        "method": "POST",
+                        "body": body,
+                    }),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 200)
+        sent_kwargs = mock_request.call_args.kwargs
+        self.assertEqual(sent_kwargs["data"], body)
+        self.assertEqual(sent_kwargs["headers"].get("Content-Type"), "application/json")
+        self.assertEqual(response.json()["status_code"], 201)
+
+    def test_non_json_body_is_forwarded_as_is(self):
+        """A body that isn't valid JSON is still forwarded, just without a
+        forced JSON Content-Type."""
+        import requests
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests, 'request', return_value=_mock_proxied_response()
+            ) as mock_request:
+                url = reverse("dj_urls_panel:execute_request")
+                response = self.client.post(
+                    url,
+                    data=json.dumps({
+                        "url": "http://example.com/api/items/",
+                        "method": "POST",
+                        "body": "plain text, not json",
+                    }),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 200)
+        sent_kwargs = mock_request.call_args.kwargs
+        self.assertEqual(sent_kwargs["data"], "plain text, not json")
+        self.assertNotIn("Content-Type", sent_kwargs["headers"])
+
+    def test_json_body_does_not_override_explicit_content_type(self):
+        """An explicit Content-Type header on the request is left untouched."""
+        import requests
+
+        body = json.dumps({"name": "widget"})
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests, 'request', return_value=_mock_proxied_response()
+            ) as mock_request:
+                url = reverse("dj_urls_panel:execute_request")
+                response = self.client.post(
+                    url,
+                    data=json.dumps({
+                        "url": "http://example.com/api/items/",
+                        "method": "POST",
+                        "body": body,
+                        "headers": {"Content-Type": "application/vnd.custom+json"},
+                    }),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 200)
+        sent_kwargs = mock_request.call_args.kwargs
+        self.assertEqual(sent_kwargs["data"], body)
+        self.assertEqual(
+            sent_kwargs["headers"].get("Content-Type"), "application/vnd.custom+json"
+        )
+
+    def test_body_is_dropped_for_get_requests(self):
+        """A body provided alongside method=GET is not forwarded."""
+        import requests
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(
+                requests, 'request', return_value=_mock_proxied_response()
+            ) as mock_request:
+                url = reverse("dj_urls_panel:execute_request")
+                self.client.post(
+                    url,
+                    data=json.dumps({
+                        "url": "http://example.com/api/",
+                        "method": "GET",
+                        "body": json.dumps({"a": 1}),
+                    }),
+                    content_type="application/json",
+                )
+
+        self.assertNotIn("data", mock_request.call_args.kwargs)
+
+    def test_non_json_proxied_response_falls_back_to_text_body(self):
+        """When the target's response isn't JSON, the raw text is returned instead."""
+        import requests
+
+        mock_response = _mock_proxied_response(headers={"Content-Type": "text/html"})
+        mock_response.json.side_effect = ValueError("no JSON object could be decoded")
+        mock_response.text = "<html>hi</html>"
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com']}):
+            with patch.object(requests, 'request', return_value=mock_response):
+                url = reverse("dj_urls_panel:execute_request")
+                response = self.client.post(
+                    url,
+                    data=json.dumps({"url": "http://example.com/", "method": "GET"}),
+                    content_type="application/json",
+                )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertFalse(data["is_json"])
+        self.assertEqual(data["body"], "<html>hi</html>")
+
 
 class TestUrlDetailView(UrlsPanelTestCase):
     """Test cases for the url_detail view with testing interface context."""
@@ -459,16 +1066,16 @@ class TestAllowedHosts(UrlsPanelTestCase):
 
     def test_blocks_localhost_by_default(self):
         """Test that localhost is blocked by default for SSRF protection."""
-        from dj_urls_panel.views import _is_url_allowed
+        from dj_urls_panel.views import ExecuteRequestView
         
         with self.settings(DJ_URLS_PANEL_SETTINGS={}):
-            is_allowed, error = _is_url_allowed("http://localhost:8000/api/test/")
+            is_allowed, error = ExecuteRequestView._is_url_allowed("http://localhost:8000/api/test/")
             self.assertFalse(is_allowed)
             self.assertIn("blocked", error.lower())
 
     def test_blocks_private_ips_by_default(self):
         """Test that private IP ranges are blocked by default."""
-        from dj_urls_panel.views import _is_url_allowed
+        from dj_urls_panel.views import ExecuteRequestView
         
         test_urls = [
             "http://127.0.0.1/api/",
@@ -480,34 +1087,52 @@ class TestAllowedHosts(UrlsPanelTestCase):
         
         with self.settings(DJ_URLS_PANEL_SETTINGS={}):
             for test_url in test_urls:
-                is_allowed, error = _is_url_allowed(test_url)
+                is_allowed, error = ExecuteRequestView._is_url_allowed(test_url)
                 self.assertFalse(is_allowed, f"Should block {test_url}")
                 self.assertIn("blocked", error.lower())
 
+    def test_blocks_url_with_no_hostname(self):
+        """Test that a URL without a hostname is rejected."""
+        from dj_urls_panel.views import ExecuteRequestView
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={}):
+            is_allowed, error = ExecuteRequestView._is_url_allowed("not-a-url-at-all")
+            self.assertFalse(is_allowed)
+            self.assertIn("no hostname found", error.lower())
+
+    def test_rejects_malformed_url_gracefully(self):
+        """Test that a URL that raises while parsing is caught and reported."""
+        from dj_urls_panel.views import ExecuteRequestView
+
+        with self.settings(DJ_URLS_PANEL_SETTINGS={}):
+            is_allowed, error = ExecuteRequestView._is_url_allowed("http://[invalid")
+            self.assertFalse(is_allowed)
+            self.assertIn("invalid url", error.lower())
+
     def test_allows_external_hosts_by_default(self):
         """Test that external hosts are allowed by default."""
-        from dj_urls_panel.views import _is_url_allowed
+        from dj_urls_panel.views import ExecuteRequestView
         
         with self.settings(DJ_URLS_PANEL_SETTINGS={}):
-            is_allowed, error = _is_url_allowed("http://example.com/api/test/")
+            is_allowed, error = ExecuteRequestView._is_url_allowed("http://example.com/api/test/")
             self.assertTrue(is_allowed)
             self.assertIsNone(error)
 
     def test_allowed_hosts_whitelist(self):
         """Test that ALLOWED_HOSTS setting creates a whitelist."""
-        from dj_urls_panel.views import _is_url_allowed
+        from dj_urls_panel.views import ExecuteRequestView
         
         with self.settings(DJ_URLS_PANEL_SETTINGS={'ALLOWED_HOSTS': ['example.com', 'api.example.com']}):
             # Allowed host
-            is_allowed, error = _is_url_allowed("http://example.com/api/")
+            is_allowed, error = ExecuteRequestView._is_url_allowed("http://example.com/api/")
             self.assertTrue(is_allowed)
             
             # Another allowed host
-            is_allowed, error = _is_url_allowed("https://api.example.com/v1/")
+            is_allowed, error = ExecuteRequestView._is_url_allowed("https://api.example.com/v1/")
             self.assertTrue(is_allowed)
             
             # Not in allowed list
-            is_allowed, error = _is_url_allowed("http://other.com/api/")
+            is_allowed, error = ExecuteRequestView._is_url_allowed("http://other.com/api/")
             self.assertFalse(is_allowed)
             self.assertIn("not in ALLOWED_HOSTS", error)
 
