@@ -102,8 +102,6 @@
       <thead>
         <tr>
           <th>{% trans "Pattern" %}</th>
-          <th>{% trans "Name" %}</th>
-          <th>{% trans "View" %}</th>
           <th>{% trans "Namespace" %}</th>
         </tr>
       </thead>
@@ -114,18 +112,8 @@
             <a href="{% url 'dj_urls_panel:url_detail' url.pattern|urlencode %}" class="dcr-data-table__link">
               <code class="dcr-code">{{ url.pattern }}</code>
             </a>
-          </td>
-          <td>
             {% if url.name %}
-            <span class="dcr-badge dcr-badge--success">{{ url.name }}</span>
-            {% else %}
-            <span class="dcr-text-muted">{% trans "unnamed" %}</span>
-            {% endif %}
-          </td>
-          <td>
-            <code class="dcr-code">{{ url.view }}</code>
-            {% if url.view_class %}
-            <div class="dcr-text-xs dcr-text-muted dcr-mt-xs">{% trans "Class:" %} {{ url.view_class }}</div>
+            <span class="dcr-text-xs dcr-text-muted">({{ url.name }})</span>
             {% endif %}
           </td>
           <td>
