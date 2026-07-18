@@ -38,4 +38,15 @@ def pytest_configure(config):
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "example_project.settings")
 
     if not settings.configured:
+        # Drop `dj_control_room` from INSTALLED_APPS for the test run only.
+        # When the hub is installed alongside a panel, it unregisters the
+        # panel's own admin placeholder in favor of a proxy model registered
+        # under the "DJ Control Room" app. This kind of behavior is tested
+        # inside the hub and not here.
+        import example_project.settings as project_settings
+
+        project_settings.INSTALLED_APPS = [
+            app for app in project_settings.INSTALLED_APPS if app != "dj_control_room"
+        ]
+
         django.setup()

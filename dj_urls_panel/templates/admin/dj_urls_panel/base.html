@@ -1,29 +1,19 @@
-{% extends "admin/base_site.html" %}
-{% load i18n admin_urls static admin_list %}
+{% extends "dj_control_room_base/panel_base.html" %}
+{% load i18n static %}
 
-{% block title %}{{ title }} | Dj Urls Panel{% endblock %}
+{% block panel_title %}{{ title|default:"Dj Urls Panel" }}{% endblock %}
 
-{% block extrahead %}
-{{ block.super }}
-{% if dj_cr_load_default_css %}<link rel="stylesheet" href="{% static 'dj_urls_panel/css/styles.css' %}">{% endif %}
-{{ dj_cr_extra_css }}
-{% endblock %}
-
-{% block branding %}
+{% block panel_branding %}
 <h1 id="site-name"><a href="{% url 'dj_urls_panel:index' %}">Dj Urls Panel</a></h1>
 {% endblock %}
 
-
-{% block messages %}
+{% block panel_breadcrumbs %}
+&rsaquo; <a href="{% url 'dj_urls_panel:index' %}">{% trans "Dj Urls Panel" %}</a>
 {% endblock %}
 
-
-{% block breadcrumbs %}
-<div class="breadcrumbs">
-<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
-&rsaquo; {% trans 'Dj Urls Panel' %}
-</div>
+{% block panel_styles %}
+<link rel="stylesheet" href="{% static 'dj_urls_panel/css/styles.css' %}">
 {% endblock %}
 
-{% block content %}
+{% block panel_content %}
 {% endblock %}

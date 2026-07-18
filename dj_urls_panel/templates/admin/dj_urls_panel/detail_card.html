@@ -1,67 +1,59 @@
-{% load i18n %}
+{% load i18n dj_urls_panel_tags %}
 
-<!-- URL Detail Card -->
-<div class="module">
-    <h2>{% trans "URL Pattern" %}</h2>
-    <div class="url-detail-content">
-        <div class="detail-section">
-            <div class="detail-row">
-                <div class="detail-label">{% trans "Pattern" %}</div>
-                <div class="detail-value">
-                    <code class="detail-code">{{ url.pattern }}</code>
-                </div>
-            </div>
-
-            <div class="detail-row">
-                <div class="detail-label">{% trans "Name" %}</div>
-                <div class="detail-value">
-                    {% if url.name %}
-                        <span class="key-type-badge key-type-string">{{ url.name }}</span>
-                    {% else %}
-                        <span style="color: #999; font-style: italic;">{% trans "unnamed" %}</span>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="detail-row">
-                <div class="detail-label">{% trans "View Function" %}</div>
-                <div class="detail-value">
-                    <code class="detail-code">{{ url.view }}</code>
-                </div>
-            </div>
-
-            {% if url.view_class %}
-            <div class="detail-row">
-                <div class="detail-label">{% trans "View Class" %}</div>
-                <div class="detail-value">
-                    <code class="detail-code">{{ url.view_class }}</code>
-                </div>
-            </div>
-            {% endif %}
-
-            <div class="detail-row">
-                <div class="detail-label">{% trans "Namespace" %}</div>
-                <div class="detail-value">
-                    {% if url.namespace %}
-                        <a href="{% url 'dj_urls_panel:index' %}?namespace={{ url.namespace }}" class="namespace-link">
-                            <span class="key-type-badge key-type-hash">{{ url.namespace }}</span>
-                        </a>
-                    {% else %}
-                        <span style="color: #999;">{% trans "None" %}</span>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="detail-row">
-                <div class="detail-label">{% trans "HTTP Methods" %}</div>
-                <div class="detail-value">
-                    <div class="http-methods-list">
-                        {% for method in http_methods %}
-                            <span class="http-method-badge http-method-{{ method|lower }}">{{ method }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="dcr-section-header">
+  <h2 class="dcr-section-header__title">{% trans "URL Information" %}</h2>
 </div>
+
+<dl class="dcr-dl">
+  <div class="dcr-dl__row">
+    <dt class="dcr-dl__label">{% trans "Pattern" %}</dt>
+    <dd class="dcr-dl__value dcr-dl__value--mono">{{ url.pattern }}</dd>
+  </div>
+
+  <div class="dcr-dl__row">
+    <dt class="dcr-dl__label">{% trans "Name" %}</dt>
+    <dd class="dcr-dl__value">
+      {% if url.name %}
+      <span class="dcr-badge dcr-badge--success">{{ url.name }}</span>
+      {% else %}
+      <span class="dcr-text-muted">{% trans "unnamed" %}</span>
+      {% endif %}
+    </dd>
+  </div>
+
+  <div class="dcr-dl__row">
+    <dt class="dcr-dl__label">{% trans "View Function" %}</dt>
+    <dd class="dcr-dl__value dcr-dl__value--mono">{{ url.view }}</dd>
+  </div>
+
+  {% if url.view_class %}
+  <div class="dcr-dl__row">
+    <dt class="dcr-dl__label">{% trans "View Class" %}</dt>
+    <dd class="dcr-dl__value dcr-dl__value--mono">{{ url.view_class }}</dd>
+  </div>
+  {% endif %}
+
+  <div class="dcr-dl__row">
+    <dt class="dcr-dl__label">{% trans "Namespace" %}</dt>
+    <dd class="dcr-dl__value">
+      {% if url.namespace %}
+      <a href="{% url 'dj_urls_panel:index' %}?namespace={{ url.namespace|urlencode }}" class="dcr-panel-card__link">
+        <span class="dcr-badge dcr-badge--indigo">{{ url.namespace }}</span>
+      </a>
+      {% else %}
+      <span class="dcr-text-muted">{% trans "None" %}</span>
+      {% endif %}
+    </dd>
+  </div>
+
+  <div class="dcr-dl__row">
+    <dt class="dcr-dl__label">{% trans "HTTP Methods" %}</dt>
+    <dd class="dcr-dl__value">
+      <div class="dcr-d-flex dcr-flex-wrap dcr-gap-xs">
+        {% for method in http_methods %}
+        <span class="{{ method|http_method_badge_variant }}">{{ method }}</span>
+        {% endfor %}
+      </div>
+    </dd>
+  </div>
+</dl>

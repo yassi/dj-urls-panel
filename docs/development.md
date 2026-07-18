@@ -72,7 +72,7 @@ make test_local
 
 ```bash
 pytest tests/test_admin.py -v
-pytest tests/test_admin.py::TestAdminIntegration::test_celery_panel_appears_in_admin_index
+pytest tests/test_admin.py::TestAdminIntegration::test_urls_panel_appears_in_admin_index
 ```
 
 ### With Coverage

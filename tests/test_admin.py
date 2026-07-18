@@ -9,16 +9,16 @@ from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 
-from .base import CeleryPanelTestCase
+from .base import UrlsPanelTestCase
 
 
 User = get_user_model()
 
 
-class TestAdminIntegration(CeleryPanelTestCase):
+class TestAdminIntegration(UrlsPanelTestCase):
     """Test cases for Django Admin integration."""
 
-    def test_celery_panel_appears_in_admin_index(self):
+    def test_urls_panel_appears_in_admin_index(self):
         """Test that the Panel appears in the Django admin index page."""
         response = self.client.get("/admin/")
 
@@ -28,14 +28,14 @@ class TestAdminIntegration(CeleryPanelTestCase):
 
         # Check that the link to the changelist exists
         changelist_url = reverse(
-            "admin:dj_urls_panel_celerypanelplaceholder_changelist"
+            "admin:dj_urls_panel_urlspanelplaceholder_changelist"
         )
         self.assertContains(response, changelist_url)
 
-    def test_celery_panel_changelist_redirects_to_index(self):
+    def test_urls_panel_changelist_redirects_to_index(self):
         """Test that clicking the Panel in admin redirects to the Panel index."""
         changelist_url = reverse(
-            "admin:dj_urls_panel_celerypanelplaceholder_changelist"
+            "admin:dj_urls_panel_urlspanelplaceholder_changelist"
         )
         response = self.client.get(changelist_url)
 
@@ -44,11 +44,11 @@ class TestAdminIntegration(CeleryPanelTestCase):
         expected_url = reverse("dj_urls_panel:index")
         self.assertRedirects(response, expected_url)
 
-    def test_unauthenticated_user_cannot_access_admin_celery_panel(self):
+    def test_unauthenticated_user_cannot_access_admin_urls_panel(self):
         """Test that unauthenticated users cannot access the Panel through admin."""
         client = Client()
         changelist_url = reverse(
-            "admin:dj_urls_panel_celerypanelplaceholder_changelist"
+            "admin:dj_urls_panel_urlspanelplaceholder_changelist"
         )
         response = client.get(changelist_url)
 
@@ -56,7 +56,7 @@ class TestAdminIntegration(CeleryPanelTestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("/admin/login/", response.url)
 
-    def test_non_staff_user_cannot_access_admin_celery_panel(self):
+    def test_non_staff_user_cannot_access_admin_urls_panel(self):
         """Test that non-staff users cannot access the Panel through admin."""
         # Create a non-staff user
         user = User.objects.create_user(
@@ -67,7 +67,7 @@ class TestAdminIntegration(CeleryPanelTestCase):
         client.force_login(user)
 
         changelist_url = reverse(
-            "admin:dj_urls_panel_celerypanelplaceholder_changelist"
+            "admin:dj_urls_panel_urlspanelplaceholder_changelist"
         )
         response = client.get(changelist_url)
 
