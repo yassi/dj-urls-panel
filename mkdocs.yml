@@ -1,10 +1,10 @@
 site_name: Dj Urls Panel
 site_description: Django admin URL introspection. Inspect, search, and understand your project's URL routing—directly from the admin.
 site_author: Yasser Toruno
-site_url: https://yassi.github.io/dj-urls-panel/
+site_url: https://django-control-room.github.io/dj-urls-panel/
 
-repo_name: yassi/dj-urls-panel
-repo_url: https://github.com/yassi/dj-urls-panel
+repo_name: django-control-room/dj-urls-panel
+repo_url: https://github.com/django-control-room/dj-urls-panel
 
 theme:
   name: material

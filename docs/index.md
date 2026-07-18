@@ -1,6 +1,6 @@
 # Dj Urls Panel
 
-  <img src="https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/dj-urls-panel.png" alt="Dj Urls Panel Logo" width="700">
+  <img src="https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/dj-urls-panel.png" alt="Dj Urls Panel Logo" width="700">
 
   <strong>Django admin URL introspection. Inspect, search, and understand your project's URL routing—directly from the admin.</strong>
 
@@ -39,4 +39,4 @@ Dj Urls Panel is a Django admin extension that provides a comprehensive interfac
 
 ## License
 
-MIT License - See [LICENSE](https://github.com/yassi/dj-urls-panel/blob/main/LICENSE) file for details.
+MIT License - See [LICENSE](https://github.com/django-control-room/dj-urls-panel/blob/main/LICENSE) file for details.
