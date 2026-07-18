@@ -13,7 +13,7 @@ Contributing to Dj Urls Panel or setting up for local development.
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/yassi/dj-urls-panel.git
+git clone https://github.com/django-control-room/dj-urls-panel.git
 cd dj-urls-panel
 ```
 

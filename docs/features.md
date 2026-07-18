@@ -16,7 +16,7 @@ View all Django URL patterns in an organized, searchable interface with detailed
 - See HTTP methods supported by each endpoint
 - Access URL metadata and reversal examples
 
-![URL List View](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/admin_url_list.png)
+![URL List View](https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/admin_url_list.png)
 
 ---
 
@@ -38,19 +38,19 @@ A Swagger-like interface for testing your URLs directly from the admin, without 
 - **Real-time Response Display**: View status codes, headers, and response body
 - **cURL Command Generation**: Automatic generation with one-click copy
 
-![URL Detail & Testing Interface](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/admin_url_detail.png)
+![URL Detail & Testing Interface](https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/admin_url_detail.png)
 
 ### Testing GET Requests
 
 Test GET requests with URL parameters, query strings, and custom headers.
 
-![GET Request Testing](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/admin_url_test_get.png)
+![GET Request Testing](https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/admin_url_test_get.png)
 
 ### Testing POST/PUT/PATCH Requests
 
 Test write operations with a full-featured request body editor.
 
-![PATCH Request Testing](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/admin_url_test_patch.png)
+![PATCH Request Testing](https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/admin_url_test_patch.png)
 
 ---
 
@@ -66,7 +66,7 @@ Automatic detection and visualization of DRF serializers, providing insights int
 - **Read-Only Indicators**: Shows which fields are read-only
 - **Help Text**: Displays field help text and validation rules
 
-![DRF Serializer Information](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/admin_url_serializaer.png)
+![DRF Serializer Information](https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/admin_url_serializaer.png)
 
 ---
 
@@ -123,7 +123,7 @@ Get detailed information about each URL and learn how to use it in your code.
 - Supported HTTP methods
 - URL parameters and types
 
-![URL Metadata](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/admin_url_meta.png)
+![URL Metadata](https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/admin_url_meta.png)
 
 ### Usage Examples
 
@@ -133,7 +133,7 @@ Code examples showing how to use URLs in your Django views:
 - Template URL tag examples
 - Parameter handling examples
 
-![Usage Examples](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/admin_url_usage.png)
+![Usage Examples](https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/admin_url_usage.png)
 
 ---
 
@@ -184,7 +184,7 @@ Seamlessly integrated into the Django Admin interface with a familiar look and f
 - Works with custom admin themes
 - Responsive design for mobile testing
 
-![Admin Home Integration](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/admin_home.png)
+![Admin Home Integration](https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/admin_home.png)
 
 ---
 

@@ -1,5 +1,5 @@
-[![Tests](https://github.com/yassi/dj-urls-panel/actions/workflows/test.yml/badge.svg)](https://github.com/yassi/dj-urls-panel/actions/workflows/test.yml)
-[![codecov](https://codecov.io/gh/yassi/dj-urls-panel/branch/main/graph/badge.svg)](https://codecov.io/gh/yassi/dj-urls-panel)
+[![Tests](https://github.com/django-control-room/dj-urls-panel/actions/workflows/test.yml/badge.svg)](https://github.com/django-control-room/dj-urls-panel/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/django-control-room/dj-urls-panel/branch/main/graph/badge.svg)](https://codecov.io/gh/django-control-room/dj-urls-panel)
 [![PyPI version](https://badge.fury.io/py/dj-urls-panel.svg)](https://badge.fury.io/py/dj-urls-panel)
 [![Python versions](https://img.shields.io/pypi/pyversions/dj-urls-panel.svg)](https://pypi.org/project/dj-urls-panel/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
@@ -10,12 +10,12 @@
 
 Django admin URL introspection. Inspect, search, and understand your project's URL routing—directly from the admin.
 
-![DJ Urls Panel](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/dj-urls-panel.png)
+![DJ Urls Panel](https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/dj-urls-panel.png)
 
 
 ## Docs
 
-[https://yassi.github.io/dj-urls-panel/](https://yassi.github.io/dj-urls-panel/)
+[https://django-control-room.github.io/dj-urls-panel/](https://django-control-room.github.io/dj-urls-panel/)
 
 ## Features
 
@@ -66,39 +66,39 @@ will appear in the same places where your models appear.
 
 **NOTE:** This application does not actually introduce any model or migrations.
 
-![Admin Home](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/admin_home.png)
+![Admin Home](https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/admin_home.png)
 
 ### URL List View
 Browse all URLs in your Django project with detailed information about patterns, views, and namespaces.
 
-![URL List](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/admin_url_list.png)
+![URL List](https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/admin_url_list.png)
 
 ### URL Detail & Testing Interface
 View detailed information about each URL and test it directly from the admin interface.
 
-![URL Detail](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/admin_url_detail.png)
+![URL Detail](https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/admin_url_detail.png)
 
 ### Interactive Testing - GET Request
 Test GET requests with dynamic URL parameters, headers, and authentication.
 
-![Test GET Request](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/admin_url_test_get.png)
+![Test GET Request](https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/admin_url_test_get.png)
 
 ### Interactive Testing - PATCH Request
 Test PATCH/POST/PUT requests with request body editor and see responses in real-time.
 
-![Test PATCH Request](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/admin_url_test_patch.png)
+![Test PATCH Request](https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/admin_url_test_patch.png)
 
 ### DRF Serializer Information
 Automatic detection and visualization of Django REST Framework serializers with field details.
 
-![Serializer Info](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/admin_url_serializaer.png)
+![Serializer Info](https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/admin_url_serializaer.png)
 
 ### URL Metadata & Usage Examples
 View URL metadata and get code examples for using URLs in your Django views.
 
-![URL Metadata](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/admin_url_meta.png)
+![URL Metadata](https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/admin_url_meta.png)
 
-![Usage Examples](https://raw.githubusercontent.com/yassi/dj-urls-panel/main/images/admin_url_usage.png)
+![Usage Examples](https://raw.githubusercontent.com/django-control-room/dj-urls-panel/main/images/admin_url_usage.png)
 
 
 ## Installation
@@ -229,7 +229,7 @@ It is reccommended that you use docker since it will automate much of dev env se
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yassi/dj-urls-panel.git
+git clone https://github.com/django-control-room/dj-urls-panel.git
 cd dj-urls-panel
 ```
 

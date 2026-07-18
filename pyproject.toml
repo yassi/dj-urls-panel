@@ -61,10 +61,10 @@ build = [
 ]
 
 [project.urls]
-Homepage = "https://yassi.github.io/dj-urls-panel/"
-Documentation = "https://yassi.github.io/dj-urls-panel/"
-Repository = "https://github.com/yassi/dj-urls-panel"
-"Bug Tracker" = "https://github.com/yassi/dj-urls-panel/issues"
+Homepage = "https://django-control-room.github.io/dj-urls-panel/"
+Documentation = "https://django-control-room.github.io/dj-urls-panel/"
+Repository = "https://github.com/django-control-room/dj-urls-panel"
+"Bug Tracker" = "https://github.com/django-control-room/dj-urls-panel/issues"
 
 [tool.setuptools]
 include-package-data = true
